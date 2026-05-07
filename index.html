@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Učíme se číst čas / Learning to Read Time</title>
+<style>
+/* ============================================================
+   DESIGN SYSTEM — Pastel Toy aesthetic, rounded, friendly
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@400;600;700;800&display=swap');
+
+:root {
+  --hour-color:   #e05c6a;   /* warm red  – hour hand & hour elements */
+  --minute-color: #4a90d9;   /* blue      – minute hand & minute elements */
+  --bg:           #fef9f0;
+  --panel:        #ffffff;
+  --panel2:       #f0f6ff;
+  --border:       #dde4f0;
+  --text:         #2d3a52;
+  --text-light:   #7a88a8;
+  --accent:       #ffb347;
+  --success:      #5cb85c;
+  --radius:       18px;
+  --shadow:       0 4px 24px rgba(74,100,180,.13);
+  --font-head:    'Baloo 2', cursive;
+  --font-body:    'Nunito', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 10% 20%, #ffe8ec 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, #e0ecff 0%, transparent 40%);
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px;
+  background: var(--panel);
+  border-bottom: 2px solid var(--border);
+  box-shadow: 0 2px 12px rgba(74,100,180,.08);
+  flex-wrap: wrap; gap: 10px;
+}
+.logo {
+  font-family: var(--font-head);
+  font-size: 1.6rem; font-weight: 800;
+  color: var(--hour-color);
+  letter-spacing: -.5px;
+  display: flex; align-items: center; gap: 8px;
+}
+.logo span { color: var(--minute-color); }
+.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Stars counter */
+.stars-box {
+  display: flex; align-items: center; gap: 6px;
+  background: #fff8e7; border: 2px solid #ffcc66;
+  border-radius: 50px; padding: 6px 16px;
+  font-weight: 800; font-size: 1.1rem; color: #b8860b;
+}
+.stars-box .star-icon { font-size: 1.3rem; }
+
+/* Language toggle */
+.lang-btn {
+  background: var(--panel2); border: 2px solid var(--border);
+  border-radius: 50px; padding: 6px 16px;
+  font-family: var(--font-body); font-weight: 700; font-size: .95rem;
+  cursor: pointer; transition: all .2s;
+  color: var(--text);
+}
+.lang-btn:hover { background: var(--minute-color); color: #fff; border-color: var(--minute-color); }
+
+/* ── NAV TABS ────────────────────────────────────────────── */
+nav {
+  display: flex; gap: 10px; padding: 16px 24px 0;
+  border-bottom: 2px solid var(--border);
+  background: var(--panel);
+}
+.tab-btn {
+  font-family: var(--font-head); font-weight: 700; font-size: 1.05rem;
+  padding: 10px 28px; border-radius: var(--radius) var(--radius) 0 0;
+  border: 2px solid transparent; border-bottom: none;
+  cursor: pointer; background: transparent; color: var(--text-light);
+  transition: all .2s; position: relative; bottom: -2px;
+}
+.tab-btn.active {
+  background: var(--bg); border-color: var(--border);
+  color: var(--text); border-bottom-color: var(--bg);
+}
+.tab-btn:hover:not(.active) { color: var(--text); background: #f5f7ff; }
+
+/* ── MAIN CONTENT ────────────────────────────────────────── */
+main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+
+/* ── SECTION CARDS ───────────────────────────────────────── */
+.card {
+  background: var(--panel);
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+/* ── SETTINGS PANEL ─────────────────────────────────────── */
+.settings-toggle-btn {
+  background: none; border: 2px solid var(--border);
+  border-radius: 50px; padding: 7px 20px;
+  font-family: var(--font-body); font-weight: 700; font-size: .9rem;
+  cursor: pointer; color: var(--text-light); transition: all .2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.settings-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+#settings-panel {
+  background: #fffbf0;
+  border: 2px solid #ffe0a0;
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  display: none;
+}
+#settings-panel.open { display: block; }
+.settings-grid { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
+.setting-item { display: flex; align-items: center; gap: 10px; }
+.setting-item label { font-weight: 700; cursor: pointer; font-size: .95rem; }
+
+/* toggle switch */
+.toggle-switch { position: relative; display: inline-block; width: 48px; height: 26px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: #ccd; border-radius: 50px;
+  transition: .3s;
+}
+.toggle-slider:before {
+  content: ''; position: absolute;
+  height: 20px; width: 20px; left: 3px; bottom: 3px;
+  background: white; border-radius: 50%; transition: .3s;
+}
+input:checked + .toggle-slider { background: var(--minute-color); }
+input:checked + .toggle-slider:before { transform: translateX(22px); }
+
+/* ── LEARNING MODE ───────────────────────────────────────── */
+#mode-learn { display: none; }
+#mode-practice { display: none; }
+#mode-learn.active, #mode-practice.active { display: block; }
+
+.learn-layout {
+  display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── CLOCK WRAPPER ───────────────────────────────────────── */
+.clock-wrapper {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  flex: 1; min-width: 280px;
+}
+.clock-label {
+  font-family: var(--font-head); font-size: 1.2rem; font-weight: 700;
+  color: var(--text-light);
+}
+#analog-svg { cursor: pointer; touch-action: none; }
+
+/* ── DIGITAL CLOCK ───────────────────────────────────────── */
+.digital-display {
+  display: flex; align-items: center; gap: 4px;
+  background: #1a2340; border-radius: 16px;
+  padding: 16px 24px; box-shadow: 0 4px 20px rgba(26,35,64,.4);
+}
+.digit-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.digit-btn {
+  background: #2a3560; border: none; border-radius: 8px;
+  color: #8ab4f8; font-size: 1.3rem; cursor: pointer;
+  width: 52px; height: 36px; display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.digit-btn:hover { background: var(--minute-color); color: #fff; }
+.digit-val {
+  font-family: 'Courier New', monospace; font-size: 3.2rem; font-weight: 700;
+  min-width: 52px; text-align: center; line-height: 1;
+}
+.digit-val.hour-val { color: var(--hour-color); }
+.digit-val.min-val  { color: var(--minute-color); }
+.digit-colon { font-size: 3rem; color: #8ab4f8; font-weight: 900; align-self: center; padding-bottom: 4px; }
+
+/* ── TIME LABEL ──────────────────────────────────────────── */
+.time-text-display {
+  font-family: var(--font-head); font-size: 1.4rem; font-weight: 700;
+  text-align: center; color: var(--text);
+  background: var(--panel2); border: 2px solid var(--border);
+  border-radius: 12px; padding: 10px 20px; min-width: 260px;
+}
+
+/* ── PRACTICE MODE ───────────────────────────────────────── */
+.practice-top {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 20px;
+}
+.difficulty-select, .submode-select {
+  font-family: var(--font-body); font-weight: 700; font-size: .95rem;
+  border: 2px solid var(--border); border-radius: 50px;
+  padding: 8px 18px; background: var(--panel); cursor: pointer;
+  color: var(--text); appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%237a88a8'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+  padding-right: 36px;
+}
+.btn-primary {
+  font-family: var(--font-head); font-weight: 700; font-size: 1.05rem;
+  background: var(--minute-color); color: #fff;
+  border: none; border-radius: 50px; padding: 10px 28px;
+  cursor: pointer; transition: all .2s; box-shadow: 0 3px 10px rgba(74,144,217,.3);
+}
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+.practice-layout {
+  display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;
+  justify-content: center;
+}
+.practice-prompt {
+  font-family: var(--font-head); font-size: 1.5rem; font-weight: 800;
+  text-align: center; margin-bottom: 16px;
+}
+.prompt-time {
+  font-size: 2rem; color: var(--hour-color);
+}
+
+/* Digital input in practice */
+.digital-input-row {
+  display: flex; align-items: center; gap: 8px;
+  justify-content: center; margin: 12px 0;
+}
+.time-input {
+  font-family: 'Courier New', monospace; font-size: 2.4rem; font-weight: 700;
+  width: 80px; text-align: center;
+  border: 3px solid var(--border); border-radius: 12px;
+  background: #1a2340; color: #8ab4f8;
+  padding: 8px 4px; outline: none;
+}
+.time-input:focus { border-color: var(--minute-color); }
+.time-input.hour-input { color: var(--hour-color); }
+.time-colon-input { font-size: 2.4rem; font-weight: 900; color: var(--text-light); }
+
+.check-btn {
+  font-family: var(--font-head); font-weight: 800; font-size: 1.1rem;
+  background: var(--success); color: #fff;
+  border: none; border-radius: 50px; padding: 12px 36px;
+  cursor: pointer; transition: all .2s;
+  box-shadow: 0 3px 12px rgba(92,184,92,.35);
+  display: block; margin: 0 auto;
+}
+.check-btn:hover { filter: brightness(1.08); transform: translateY(-2px); }
+
+/* Feedback */
+.feedback-msg {
+  text-align: center; font-family: var(--font-head);
+  font-size: 1.3rem; font-weight: 800;
+  padding: 10px 20px; border-radius: 12px; margin-top: 14px;
+  min-height: 52px; transition: all .3s;
+}
+.feedback-msg.correct { background: #e6f9e6; color: #2e7d32; }
+.feedback-msg.wrong   { background: #fff0f0; color: #c0392b; }
+
+/* ── CONFETTI CANVAS ─────────────────────────────────────── */
+#confetti-canvas {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 9999;
+}
+
+/* ── HINT BLINK ANIMATION ────────────────────────────────── */
+@keyframes blinkRed   { 0%,100%{opacity:1} 50%{opacity:.15} }
+@keyframes blinkBlue  { 0%,100%{opacity:1} 50%{opacity:.15} }
+.blink-hour   { animation: blinkRed  .6s ease-in-out 4; }
+.blink-minute { animation: blinkBlue .6s ease-in-out 4; }
+
+/* ── SCORE ANIMATION ─────────────────────────────────────── */
+@keyframes popIn {
+  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(1.3) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.star-pop { animation: popIn .45s cubic-bezier(.36,.07,.19,.97) both; }
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  header { padding: 10px 14px; }
+  .logo { font-size: 1.2rem; }
+  main { padding: 14px; }
+  nav { padding: 10px 14px 0; gap: 6px; }
+  .tab-btn { padding: 8px 16px; font-size: .95rem; }
+  .digital-display { padding: 10px 14px; }
+  .digit-val { font-size: 2.4rem; min-width: 40px; }
+  .digit-btn { width: 40px; height: 30px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ══════════════════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════════════════════ -->
+<header>
+  <div class="logo">🕐 <span data-i18n="appTitle">Učíme se čas</span></div>
+  <div class="header-right">
+    <div class="stars-box">
+      <span class="star-icon">⭐</span>
+      <span id="star-count">0</span>
+      <span data-i18n="stars">hvězdiček</span>
+    </div>
+    <button class="lang-btn" id="lang-toggle">🌐 EN</button>
+    <button class="settings-toggle-btn" id="settings-open-btn">⚙️ <span data-i18n="settings">Nastavení</span></button>
+  </div>
+</header>
+
+<!-- Settings panel -->
+<div style="max-width:1100px;margin:0 auto;padding:0 24px;">
+  <div id="settings-panel">
+    <div class="settings-grid">
+      <div class="setting-item">
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-24h" checked>
+          <span class="toggle-slider"></span>
+        </label>
+        <label for="toggle-24h" data-i18n="show24h">Zobrazit 24h čísla</label>
+      </div>
+      <div class="setting-item">
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-minutes" checked>
+          <span class="toggle-slider"></span>
+        </label>
+        <label for="toggle-minutes" data-i18n="showMinNums">Zobrazit minutová čísla</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── NAV TABS ─────────────────────────────────────────── -->
+<nav>
+  <button class="tab-btn active" id="tab-learn" onclick="switchTab('learn')" data-i18n="modeLearn">📖 Výuka</button>
+  <button class="tab-btn" id="tab-practice" onclick="switchTab('practice')" data-i18n="modePractice">🎯 Procvičování</button>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODE A – LEARNING
+════════════════════════════════════════════════════════════ -->
+<div id="mode-learn" class="active">
+  <div class="card">
+    <div class="learn-layout">
+      <!-- ANALOG -->
+      <div class="clock-wrapper">
+        <div class="clock-label" data-i18n="analogClock">Analogové hodiny</div>
+        <svg id="analog-svg" width="320" height="320" viewBox="0 0 320 320"></svg>
+        <div class="time-text-display" id="learn-time-text">–</div>
+      </div>
+      <!-- DIGITAL -->
+      <div class="clock-wrapper">
+        <div class="clock-label" data-i18n="digitalClock">Digitální hodiny</div>
+        <div class="digital-display">
+          <div class="digit-group">
+            <button class="digit-btn" onclick="changeDigitalTime('hour',1)">▲</button>
+            <div class="digit-val hour-val" id="dig-hour">12</div>
+            <button class="digit-btn" onclick="changeDigitalTime('hour',-1)">▼</button>
+          </div>
+          <div class="digit-colon">:</div>
+          <div class="digit-group">
+            <button class="digit-btn" onclick="changeDigitalTime('minute',1)">▲</button>
+            <div class="digit-val min-val" id="dig-min">00</div>
+            <button class="digit-btn" onclick="changeDigitalTime('minute',-1)">▼</button>
+          </div>
+        </div>
+        <div style="margin-top:10px;text-align:center;font-weight:700;color:var(--text-light);font-size:.9rem;" data-i18n="clickArrows">Klikni na šipky nebo přetáhni ručičky</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODE B – PRACTICE
+════════════════════════════════════════════════════════════ -->
+<div id="mode-practice">
+  <div class="card">
+    <!-- controls -->
+    <div class="practice-top">
+      <select class="submode-select" id="submode-select" onchange="saveSettings()">
+        <option value="digital2analog" data-i18n-opt="subDigToAna">Digitální → Analogové</option>
+        <option value="analog2digital" data-i18n-opt="subAnaTodig">Analogové → Digitální</option>
+        <option value="mix" data-i18n-opt="subMix">Mix</option>
+      </select>
+      <select class="difficulty-select" id="diff-select" onchange="saveSettings()">
+        <option value="60" data-i18n-opt="diffWhole">Celé hodiny</option>
+        <option value="30" data-i18n-opt="diffHalf">Půlhodiny</option>
+        <option value="15" data-i18n-opt="diffQuarter">Čtvrthodiny</option>
+        <option value="5"  data-i18n-opt="diffFive">Po 5 minutách</option>
+        <option value="1"  data-i18n-opt="diffExact">Přesný čas</option>
+      </select>
+      <button class="btn-primary" onclick="startNewQuestion()" data-i18n="newQuestion">Nová otázka ▶</button>
+    </div>
+
+    <div class="practice-layout" id="practice-layout">
+      <!-- dynamically filled -->
+    </div>
+
+    <div class="feedback-msg" id="feedback-msg"></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+  lang: 'cs',
+  hours: 10,
+  minutes: 10,
+  show24h: true,
+  showMinNums: true,
+  stars: 0,
+  // Practice
+  practiceSubmode: 'digital2analog',
+  practiceDiff: 1,
+  practiceTarget: { h: 0, m: 0 },
+  practiceCurrentSubmode: 'digital2analog', // resolved (for mix)
+  answered: false,
+};
+
+/* ============================================================
+   TRANSLATIONS
+   ============================================================ */
+const i18n = {
+  cs: {
+    appTitle: 'Učíme se čas',
+    stars: 'hvězdiček',
+    settings: 'Nastavení',
+    show24h: 'Zobrazit 24h čísla',
+    showMinNums: 'Zobrazit minutová čísla',
+    modeLearn: '📖 Výuka',
+    modePractice: '🎯 Procvičování',
+    analogClock: 'Analogové hodiny',
+    digitalClock: 'Digitální hodiny',
+    clickArrows: 'Klikni na šipky nebo přetahuj ručičky',
+    newQuestion: 'Nová otázka ▶',
+    subDigToAna: 'Digitální → Analogové',
+    subAnaTodig: 'Analogové → Digitální',
+    subMix: 'Mix',
+    diffWhole: 'Celé hodiny',
+    diffHalf: 'Půlhodiny',
+    diffQuarter: 'Čtvrthodiny',
+    diffFive: 'Po 5 minutách',
+    diffExact: 'Přesný čas',
+    promptSetAnalog: 'Nastav ručičky na čas:',
+    promptSetDigital: 'Zapiš čas ze hodin:',
+    checkBtn: '✔ Zkontrolovat',
+    correct: '🎉 Výborně! Správně!',
+    wrong: '💡 Zkus to znovu! Správný čas byl',
+    hoursWord: 'hodin',
+    minutesWord: 'minut',
+    timeLabel: (h, m) => {
+      const h12 = h % 12 || 12;
+      if (m === 0) return `${h12} hodin přesně`;
+      if (m === 30) return `půl ${h12 + 1 > 12 ? 1 : h12 + 1}`;
+      if (m === 15) return `čtvrt na ${h12 + 1 > 12 ? 1 : h12 + 1}`;
+      if (m === 45) return `tři čtvrtě na ${h12 + 1 > 12 ? 1 : h12 + 1}`;
+      return `${h12}:${String(m).padStart(2,'0')}`;
+    },
+  },
+  en: {
+    appTitle: 'Learn the Clock',
+    stars: 'stars',
+    settings: 'Settings',
+    show24h: 'Show 24h numbers',
+    showMinNums: 'Show minute numbers',
+    modeLearn: '📖 Learning',
+    modePractice: '🎯 Practice',
+    analogClock: 'Analog Clock',
+    digitalClock: 'Digital Clock',
+    clickArrows: 'Click arrows or drag the hands',
+    newQuestion: 'New Question ▶',
+    subDigToAna: 'Digital → Analog',
+    subAnaTodig: 'Analog → Digital',
+    subMix: 'Mix',
+    diffWhole: 'Whole hours',
+    diffHalf: 'Half hours',
+    diffQuarter: 'Quarter hours',
+    diffFive: 'Every 5 minutes',
+    diffExact: 'Exact minutes',
+    promptSetAnalog: 'Set the hands to:',
+    promptSetDigital: 'Write the time shown:',
+    checkBtn: '✔ Check',
+    correct: '🎉 Excellent! Correct!',
+    wrong: '💡 Try again! Correct time was',
+    hoursWord: 'hours',
+    minutesWord: 'minutes',
+    timeLabel: (h, m) => {
+      const h12 = h % 12 || 12;
+      const ampm = h < 12 ? 'AM' : 'PM';
+      if (m === 0) return `${h12}:00 o'clock ${ampm}`;
+      if (m === 30) return `Half past ${h12}`;
+      if (m === 15) return `Quarter past ${h12}`;
+      if (m === 45) return `Quarter to ${h12 + 1 > 12 ? 1 : h12 + 1}`;
+      return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+    },
+  }
+};
+const t = key => (i18n[state.lang][key] || key);
+
+/* ============================================================
+   SVG CLOCK RENDERER
+   ============================================================ */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const CX = 160, CY = 160, R = 148;
+
+function makeSVGElem(tag, attrs) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+// Angles: 0 = 12 o'clock, clockwise
+function timeToAngle(h, m) {
+  return { hourAngle: ((h % 12) + m / 60) * 30, minuteAngle: m * 6 };
+}
+
+function buildClockFace(svgEl) {
+  svgEl.innerHTML = '';
+  svgEl.setAttribute('viewBox', '0 0 320 320');
+
+  // Shadow + outer ring
+  const defs = makeSVGElem('defs', {});
+  const filter = makeSVGElem('filter', { id: 'dropshadow', x: '-10%', y: '-10%', width: '120%', height: '120%' });
+  const feDropShadow = makeSVGElem('feDropShadow', { dx: '0', dy: '3', stdDeviation: '6', 'flood-color': 'rgba(74,100,180,0.18)' });
+  filter.appendChild(feDropShadow);
+  defs.appendChild(filter);
+  svgEl.appendChild(defs);
+
+  // Clock face
+  svgEl.appendChild(makeSVGElem('circle', { cx: CX, cy: CY, r: R, fill: '#fff', stroke: '#dde4f0', 'stroke-width': '3', filter: 'url(#dropshadow)' }));
+
+  // Minute tick marks
+  for (let i = 0; i < 60; i++) {
+    const angle = (i * 6 - 90) * Math.PI / 180;
+    const isHour = i % 5 === 0;
+    const outer = R - 4;
+    const inner = isHour ? outer - 16 : outer - 8;
+    svgEl.appendChild(makeSVGElem('line', {
+      x1: CX + Math.cos(angle) * inner, y1: CY + Math.sin(angle) * inner,
+      x2: CX + Math.cos(angle) * outer, y2: CY + Math.sin(angle) * outer,
+      stroke: isHour ? '#90a0c0' : '#c8d0e0',
+      'stroke-width': isHour ? '2.5' : '1',
+      'stroke-linecap': 'round'
+    }));
+  }
+
+  // Minute numbers (outer)
+  if (state.showMinNums) {
+    for (let i = 0; i < 12; i++) {
+      const m = i * 5;
+      const angle = (i * 30 - 90) * Math.PI / 180;
+      const nr = R - 28;
+      const el = makeSVGElem('text', {
+        x: CX + Math.cos(angle) * nr, y: CY + Math.sin(angle) * nr,
+        'text-anchor': 'middle', 'dominant-baseline': 'central',
+        'font-family': 'Nunito, sans-serif', 'font-size': '11', 'font-weight': '700',
+        fill: '#4a90d9', opacity: '0.75', 'data-min-num': '1'
+      });
+      el.textContent = String(m).padStart(2, '0');
+      svgEl.appendChild(el);
+    }
+  }
+
+  // Hour numbers (1–12) + optional 24h
+  for (let i = 1; i <= 12; i++) {
+    const angle = (i * 30 - 90) * Math.PI / 180;
+    const nr = R - 52;
+
+    // 24h number (smaller, inner)
+    if (state.show24h) {
+      const h24 = i + 12 === 24 ? 24 : i + 12;
+      const nr2 = nr - 22;
+      const el24 = makeSVGElem('text', {
+        x: CX + Math.cos(angle) * nr2, y: CY + Math.sin(angle) * nr2,
+        'text-anchor': 'middle', 'dominant-baseline': 'central',
+        'font-family': 'Nunito, sans-serif', 'font-size': '10.5', 'font-weight': '600',
+        fill: '#e05c6a', opacity: '0.65', 'data-24h-num': '1'
+      });
+      el24.textContent = h24;
+      svgEl.appendChild(el24);
+    }
+
+    // Main hour number
+    const elH = makeSVGElem('text', {
+      x: CX + Math.cos(angle) * nr, y: CY + Math.sin(angle) * nr,
+      'text-anchor': 'middle', 'dominant-baseline': 'central',
+      'font-family': 'Baloo 2, cursive', 'font-size': '22', 'font-weight': '800',
+      fill: '#2d3a52'
+    });
+    elH.textContent = i;
+    svgEl.appendChild(elH);
+  }
+
+  // Centre dot
+  svgEl.appendChild(makeSVGElem('circle', { cx: CX, cy: CY, r: '7', fill: '#2d3a52' }));
+}
+
+function drawHands(svgEl, h, m) {
+  // Remove old hands
+  svgEl.querySelectorAll('.clock-hand, .hand-cap').forEach(e => e.remove());
+
+  const { hourAngle, minuteAngle } = timeToAngle(h, m);
+
+  function handCoords(angleDeg, length) {
+    const rad = (angleDeg - 90) * Math.PI / 180;
+    return { x: CX + Math.cos(rad) * length, y: CY + Math.sin(rad) * length };
+  }
+
+  // Hour hand
+  const hEnd = handCoords(hourAngle, 80);
+  const hourHand = makeSVGElem('line', {
+    x1: CX, y1: CY, x2: hEnd.x, y2: hEnd.y,
+    stroke: '#e05c6a', 'stroke-width': '8',
+    'stroke-linecap': 'round', class: 'clock-hand hour-hand'
+  });
+  svgEl.appendChild(hourHand);
+
+  // Minute hand
+  const mEnd = handCoords(minuteAngle, 112);
+  const minuteHand = makeSVGElem('line', {
+    x1: CX, y1: CY, x2: mEnd.x, y2: mEnd.y,
+    stroke: '#4a90d9', 'stroke-width': '5',
+    'stroke-linecap': 'round', class: 'clock-hand minute-hand'
+  });
+  svgEl.appendChild(minuteHand);
+
+  // Centre cap
+  svgEl.appendChild(makeSVGElem('circle', { cx: CX, cy: CY, r: '7', fill: '#2d3a52', class: 'hand-cap' }));
+  svgEl.appendChild(makeSVGElem('circle', { cx: CX, cy: CY, r: '3.5', fill: '#fff', class: 'hand-cap' }));
+}
+
+function renderClock(svgEl, h, m) {
+  buildClockFace(svgEl);
+  drawHands(svgEl, h, m);
+}
+
+/* ============================================================
+   DRAG-TO-SET hands on analog clock
+   ============================================================ */
+function angleToDeg(dx, dy) {
+  let angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+  if (angle < 0) angle += 360;
+  return angle;
+}
+
+function setupDrag(svgEl, onTimeChange) {
+  let dragging = null; // 'hour' | 'minute'
+
+  function getAngle(e) {
+    const rect = svgEl.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    // map to SVG coords
+    const scaleX = 320 / rect.width;
+    const scaleY = 320 / rect.height;
+    const dx = (clientX - rect.left) * scaleX - CX;
+    const dy = (clientY - rect.top) * scaleY - CY;
+    return angleToDeg(dx, dy);
+  }
+
+  function getNearHand(angle) {
+    // Check if closer to hour or minute hand angle
+    const { hourAngle, minuteAngle } = timeToAngle(state.hours, state.minutes);
+    const dHour = Math.abs(((angle - hourAngle + 540) % 360) - 180);
+    const dMin  = Math.abs(((angle - minuteAngle + 540) % 360) - 180);
+    return dHour < dMin ? 'hour' : 'minute';
+  }
+
+  svgEl.addEventListener('mousedown', start);
+  svgEl.addEventListener('touchstart', start, { passive: true });
+
+  function start(e) {
+    const angle = getAngle(e);
+    dragging = getNearHand(angle);
+    update(angle);
+  }
+
+  window.addEventListener('mousemove', move);
+  window.addEventListener('touchmove', move, { passive: true });
+  function move(e) {
+    if (!dragging) return;
+    update(getAngle(e));
+  }
+
+  window.addEventListener('mouseup', () => dragging = null);
+  window.addEventListener('touchend', () => dragging = null);
+
+  function update(angle) {
+    if (dragging === 'hour') {
+      let h = Math.round(angle / 30) % 12;
+      state.hours = (state.hours >= 12 ? h + 12 : h);
+      if (state.hours >= 24) state.hours -= 12;
+      if (state.hours < 0) state.hours += 12;
+    } else {
+      state.minutes = Math.round(angle / 6) % 60;
+      if (state.minutes < 0) state.minutes += 60;
+    }
+    onTimeChange();
+  }
+}
+
+/* ============================================================
+   UPDATE UI
+   ============================================================ */
+function updateLearnUI() {
+  const svgEl = document.getElementById('analog-svg');
+  renderClock(svgEl, state.hours, state.minutes);
+  document.getElementById('dig-hour').textContent = String(state.hours).padStart(2, '0');
+  document.getElementById('dig-min').textContent  = String(state.minutes).padStart(2, '0');
+  document.getElementById('learn-time-text').textContent = i18n[state.lang].timeLabel(state.hours, state.minutes);
+}
+
+function changeDigitalTime(part, delta) {
+  if (part === 'hour') {
+    state.hours = (state.hours + delta + 24) % 24;
+  } else {
+    state.minutes = (state.minutes + delta + 60) % 60;
+  }
+  updateLearnUI();
+}
+
+/* ============================================================
+   PRACTICE MODE
+   ============================================================ */
+let practiceAnalogSVG = null;
+
+// Isolated state for the practice analog clock — NEVER touches state.hours/state.minutes
+// so learn mode is not polluted.
+const practiceClockState = { h: 12, m: 0 };
+
+function generateTarget() {
+  // diff-select value = minute step directly:
+  //   60 = celé hodiny (minutes always 0)
+  //   30 = půlhodiny   (0 or 30)
+  //   15 = čtvrthodiny (0, 15, 30, 45)
+  //    5 = po 5 min    (0,5,10,...,55)
+  //    1 = přesný čas  (0–59)
+  const step = parseInt(document.getElementById('diff-select').value);
+
+  if (step === 60) {
+    // Whole hours only — minute is always 0
+    state.practiceTarget.m = 0;
+  } else {
+    const slots = Math.floor(60 / step); // e.g. step=15 → 4 slots: 0,15,30,45
+    state.practiceTarget.m = Math.floor(Math.random() * slots) * step;
+  }
+  state.practiceTarget.h = Math.floor(Math.random() * 12) + 1; // 1–12
+
+  // Reset the practice clock to 12:00 so child has to actually move it
+  practiceClockState.h = 12;
+  practiceClockState.m = 0;
+}
+
+function setupPracticeDrag(svgEl) {
+  // Like setupDrag but reads/writes practiceClockState, not global state
+  let dragging = null;
+
+  function getAngle(e) {
+    const rect = svgEl.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const scaleX = 320 / rect.width;
+    const scaleY = 320 / rect.height;
+    const dx = (clientX - rect.left) * scaleX - CX;
+    const dy = (clientY - rect.top) * scaleY - CY;
+    return angleToDeg(dx, dy);
+  }
+
+  function getNearHand(angle) {
+    const { hourAngle, minuteAngle } = timeToAngle(practiceClockState.h, practiceClockState.m);
+    const dHour = Math.abs(((angle - hourAngle + 540) % 360) - 180);
+    const dMin  = Math.abs(((angle - minuteAngle + 540) % 360) - 180);
+    return dHour < dMin ? 'hour' : 'minute';
+  }
+
+  function update(angle) {
+    if (dragging === 'hour') {
+      let h = Math.round(angle / 30) % 12;
+      // Preserve AM/PM based on current value
+      practiceClockState.h = practiceClockState.h >= 12 ? h + 12 : h;
+      if (practiceClockState.h >= 24) practiceClockState.h -= 12;
+      if (practiceClockState.h < 0) practiceClockState.h += 12;
+    } else {
+      practiceClockState.m = Math.round(angle / 6) % 60;
+      if (practiceClockState.m < 0) practiceClockState.m += 60;
+    }
+    renderClock(svgEl, practiceClockState.h, practiceClockState.m);
+  }
+
+  function start(e) {
+    dragging = getNearHand(getAngle(e));
+    update(getAngle(e));
+  }
+  function move(e) { if (dragging) update(getAngle(e)); }
+  function stop()  { dragging = null; }
+
+  svgEl.addEventListener('mousedown', start);
+  svgEl.addEventListener('touchstart', start, { passive: true });
+  window.addEventListener('mousemove', move);
+  window.addEventListener('touchmove', move, { passive: true });
+  window.addEventListener('mouseup', stop);
+  window.addEventListener('touchend', stop);
+}
+
+function startNewQuestion() {
+  state.answered = false;
+  generateTarget();
+
+  const sub = document.getElementById('submode-select').value;
+  state.practiceCurrentSubmode = sub === 'mix'
+    ? (Math.random() < .5 ? 'digital2analog' : 'analog2digital')
+    : sub;
+
+  const layout = document.getElementById('practice-layout');
+  layout.innerHTML = '';
+  document.getElementById('feedback-msg').className = 'feedback-msg';
+  document.getElementById('feedback-msg').textContent = '';
+
+  const { h, m } = state.practiceTarget;
+  const lang = state.lang;
+
+  if (state.practiceCurrentSubmode === 'digital2analog') {
+    // Show digital time → child sets analog hands
+    layout.innerHTML = `
+      <div style="flex:1;min-width:260px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div class="practice-prompt">${t('promptSetAnalog')}<br><span class="prompt-time">${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}</span></div>
+        <div class="time-text-display">${i18n[lang].timeLabel(h, m)}</div>
+      </div>
+      <div style="flex:1;min-width:280px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div class="clock-label">${t('analogClock')}</div>
+        <svg id="practice-analog-svg" width="300" height="300" viewBox="0 0 320 320" style="cursor:pointer;touch-action:none;"></svg>
+        <button class="check-btn" onclick="checkAnswer()">${t('checkBtn')}</button>
+      </div>`;
+    practiceAnalogSVG = document.getElementById('practice-analog-svg');
+    renderClock(practiceAnalogSVG, practiceClockState.h, practiceClockState.m);
+    setupPracticeDrag(practiceAnalogSVG);
+
+  } else {
+    // Show analog clock → child types digital time
+    layout.innerHTML = `
+      <div style="flex:1;min-width:280px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div class="clock-label">${t('analogClock')}</div>
+        <svg id="practice-analog-svg" width="300" height="300" viewBox="0 0 320 320"></svg>
+      </div>
+      <div style="flex:1;min-width:260px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+        <div class="practice-prompt">${t('promptSetDigital')}</div>
+        <div class="digital-input-row">
+          <input class="time-input hour-input" type="number" id="inp-hour" min="0" max="23" placeholder="HH">
+          <span class="time-colon-input">:</span>
+          <input class="time-input" type="number" id="inp-min" min="0" max="59" placeholder="MM">
+        </div>
+        <button class="check-btn" onclick="checkAnswer()">${t('checkBtn')}</button>
+      </div>`;
+    practiceAnalogSVG = document.getElementById('practice-analog-svg');
+    renderClock(practiceAnalogSVG, h, m);
+    // Focus hour input for convenience
+    setTimeout(() => document.getElementById('inp-hour')?.focus(), 50);
+  }
+}
+
+function checkAnswer() {
+  if (state.answered) return;
+  const { h, m } = state.practiceTarget;
+
+  let correct = false;
+  if (state.practiceCurrentSubmode === 'digital2analog') {
+    // Compare practiceClockState (isolated) with target
+    const ah = practiceClockState.h % 12;
+    const th = h % 12;
+    const am = practiceClockState.m;
+    correct = (ah === th && am === m);
+  } else {
+    const ih = parseInt(document.getElementById('inp-hour')?.value);
+    const im = parseInt(document.getElementById('inp-min')?.value);
+    if (isNaN(ih) || isNaN(im)) return; // nothing entered yet
+    // Accept both 12h and 24h input
+    correct = ((ih % 12 === h % 12 || ih === h) && im === m);
+  }
+
+  const fb = document.getElementById('feedback-msg');
+  if (correct) {
+    state.answered = true;
+    state.stars++;
+    saveProgress();
+    updateStarDisplay();
+    fb.className = 'feedback-msg correct';
+    fb.textContent = t('correct');
+    launchConfetti();
+  } else {
+    fb.className = 'feedback-msg wrong';
+    fb.textContent = `${t('wrong')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    // Blink hint on the practice analog clock
+    if (practiceAnalogSVG) {
+      const hHand = practiceAnalogSVG.querySelector('.hour-hand');
+      const mHand = practiceAnalogSVG.querySelector('.minute-hand');
+      if (hHand) { hHand.classList.add('blink-hour');   setTimeout(() => hHand.classList.remove('blink-hour'),   3000); }
+      if (mHand) { mHand.classList.add('blink-minute'); setTimeout(() => mHand.classList.remove('blink-minute'), 3000); }
+      // After blink, snap to correct answer
+      setTimeout(() => {
+        practiceClockState.h = h; practiceClockState.m = m;
+        renderClock(practiceAnalogSVG, h, m);
+      }, 1400);
+    }
+  }
+}
+
+/* ============================================================
+   CONFETTI
+   ============================================================ */
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = Array.from({ length: 120 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * -canvas.height * .5,
+    vx: (Math.random() - .5) * 4,
+    vy: Math.random() * 4 + 2,
+    color: ['#e05c6a','#4a90d9','#ffb347','#5cb85c','#9b59b6','#1abc9c'][Math.floor(Math.random()*6)],
+    size: Math.random() * 10 + 6,
+    spin: Math.random() * 360,
+    spinSpeed: (Math.random() - .5) * 8,
+    shape: Math.random() < .5 ? 'rect' : 'circle'
+  }));
+
+  let frame;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    for (const p of particles) {
+      p.x += p.vx; p.y += p.vy; p.spin += p.spinSpeed; p.vy += .05;
+      if (p.y < canvas.height + 30) alive = true;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.spin * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      if (p.shape === 'rect') {
+        ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size/2, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    if (alive) frame = requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  cancelAnimationFrame(frame);
+  draw();
+}
+
+/* ============================================================
+   STARS
+   ============================================================ */
+function updateStarDisplay() {
+  const el = document.getElementById('star-count');
+  el.textContent = state.stars;
+  el.classList.remove('star-pop');
+  void el.offsetWidth; // reflow
+  el.classList.add('star-pop');
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function switchTab(tab) {
+  document.getElementById('mode-learn').classList.toggle('active', tab === 'learn');
+  document.getElementById('mode-practice').classList.toggle('active', tab === 'practice');
+  document.getElementById('tab-learn').classList.toggle('active', tab === 'learn');
+  document.getElementById('tab-practice').classList.toggle('active', tab === 'practice');
+  if (tab === 'practice') {
+    document.getElementById('practice-layout').innerHTML = '';
+    document.getElementById('feedback-msg').className = 'feedback-msg';
+    document.getElementById('feedback-msg').textContent = '';
+  }
+}
+
+/* ============================================================
+   LANGUAGE
+   ============================================================ */
+function applyLanguage() {
+  const lang = state.lang;
+  document.documentElement.lang = lang;
+  document.getElementById('lang-toggle').textContent = lang === 'cs' ? '🌐 EN' : '🌐 CZ';
+
+  // Static data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[lang][key]) el.textContent = i18n[lang][key];
+  });
+
+  // Select options
+  document.querySelectorAll('[data-i18n-opt]').forEach(el => {
+    const key = el.getAttribute('data-i18n-opt');
+    if (i18n[lang][key]) el.textContent = i18n[lang][key];
+  });
+
+  // Update time label
+  updateLearnUI();
+}
+
+document.getElementById('lang-toggle').addEventListener('click', () => {
+  state.lang = state.lang === 'cs' ? 'en' : 'cs';
+  applyLanguage();
+  saveProgress();
+});
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+document.getElementById('settings-open-btn').addEventListener('click', () => {
+  document.getElementById('settings-panel').classList.toggle('open');
+});
+
+document.getElementById('toggle-24h').addEventListener('change', e => {
+  state.show24h = e.target.checked;
+  saveSettings();
+  updateLearnUI();
+  if (practiceAnalogSVG) renderClock(practiceAnalogSVG, state.practiceTarget.h, state.practiceTarget.m);
+});
+
+document.getElementById('toggle-minutes').addEventListener('change', e => {
+  state.showMinNums = e.target.checked;
+  saveSettings();
+  updateLearnUI();
+  if (practiceAnalogSVG) renderClock(practiceAnalogSVG, state.practiceTarget.h, state.practiceTarget.m);
+});
+
+/* ============================================================
+   LOCAL STORAGE
+   ============================================================ */
+function saveProgress() {
+  localStorage.setItem('clockApp_stars', state.stars);
+  localStorage.setItem('clockApp_lang', state.lang);
+}
+
+function saveSettings() {
+  localStorage.setItem('clockApp_show24h', state.show24h);
+  localStorage.setItem('clockApp_showMinNums', state.showMinNums);
+  state.practiceSubmode = document.getElementById('submode-select').value;
+  state.practiceDiff    = document.getElementById('diff-select').value;
+  localStorage.setItem('clockApp_submode', state.practiceSubmode);
+  localStorage.setItem('clockApp_diff', state.practiceDiff);
+}
+
+function loadFromStorage() {
+  const stars = localStorage.getItem('clockApp_stars');
+  if (stars !== null) state.stars = parseInt(stars);
+
+  const lang = localStorage.getItem('clockApp_lang');
+  if (lang) state.lang = lang;
+
+  const show24h = localStorage.getItem('clockApp_show24h');
+  if (show24h !== null) state.show24h = show24h === 'true';
+
+  const showMin = localStorage.getItem('clockApp_showMinNums');
+  if (showMin !== null) state.showMinNums = showMin === 'true';
+
+  const submode = localStorage.getItem('clockApp_submode');
+  if (submode) state.practiceSubmode = submode;
+
+  const diff = localStorage.getItem('clockApp_diff');
+  const validDiffs = ['60','30','15','5','1'];
+  if (diff && validDiffs.includes(diff)) state.practiceDiff = diff;
+  else state.practiceDiff = '60'; // default to whole hours if old/invalid value
+
+  // Apply to DOM
+  document.getElementById('toggle-24h').checked = state.show24h;
+  document.getElementById('toggle-minutes').checked = state.showMinNums;
+  document.getElementById('submode-select').value = state.practiceSubmode;
+  document.getElementById('diff-select').value = state.practiceDiff;
+  document.getElementById('star-count').textContent = state.stars;
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init() {
+  loadFromStorage();
+  applyLanguage();
+
+  // Setup learn mode clock
+  const learnSVG = document.getElementById('analog-svg');
+  setupDrag(learnSVG, updateLearnUI);
+  updateLearnUI();
+}
+
+init();
+</script>
+</body>
+</html>
