@@ -234,21 +234,79 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
   font-size: 2rem; color: var(--hour-color);
 }
 
-/* Digital input in practice */
-.digital-input-row {
+/* ── DIGITAL INPUT WIDGET (practice) ─────────────────────── */
+.dig-input-widget {
+  display: flex; flex-direction: column; align-items: center; 
+  gap: 6px; /* Zmenšená mezera pro lepší vertikální uspořádání */
+  width: 100%;
+}
+
+/* Spinner row: ▲  HH : MM  ▲  etc. */
+.spinner-row {
   display: flex; align-items: center; gap: 8px;
-  justify-content: center; margin: 12px 0;
 }
-.time-input {
-  font-family: 'Courier New', monospace; font-size: 2.4rem; font-weight: 700;
-  width: 80px; text-align: center;
-  border: 3px solid var(--border); border-radius: 12px;
-  background: #1a2340; color: #8ab4f8;
-  padding: 8px 4px; outline: none;
+.spinner-group {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
-.time-input:focus { border-color: var(--minute-color); }
-.time-input.hour-input { color: var(--hour-color); }
-.time-colon-input { font-size: 2.4rem; font-weight: 900; color: var(--text-light); }
+
+/* ZVĚTŠENÉ ŠIPKY */
+.spin-btn {
+  width: 84px; height: 50px; /* Výrazně zvětšená plocha pro kliknutí */
+  border: none; border-radius: 12px;
+  font-size: 1.8rem; font-weight: 900; line-height: 1;
+  cursor: pointer; transition: background .15s, transform .1s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 8px rgba(74,144,217,.15); /* Plastičtější vzhled */
+}
+.spin-btn.up   { background: #e8f0fe; color: var(--minute-color); }
+.spin-btn.down { background: #e8f0fe; color: var(--minute-color); }
+.spin-btn:hover { filter: brightness(.93); transform: scale(1.06); }
+.spin-btn:active { transform: scale(.97); }
+.spin-btn.hour-spin.up, .spin-btn.hour-spin.down {
+  color: var(--hour-color); background: #fdecea;
+}
+
+/* Sjednocení šířky displeje se zvětšenými tlačítky */
+.spin-display {
+  font-family: 'Courier New', monospace; font-size: 3.5rem; font-weight: 700;
+  min-width: 84px; text-align: center; line-height: 1;
+  background: #1a2340; border-radius: 12px; padding: 6px 4px;
+  border: 3px solid transparent;
+  transition: border-color .2s;
+}
+.spin-display.hour-disp  { color: var(--hour-color);   border-color: #3d2020; }
+.spin-display.min-disp   { color: var(--minute-color); border-color: #1a2d4a; }
+.spin-display.active-inp { border-color: #fff !important; }
+
+.spin-colon {
+  font-size: 3rem; font-weight: 900; color: #6a80b0;
+  padding-bottom: 6px; user-select: none;
+}
+
+/* Numpad */
+.numpad {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; width: 220px;
+}
+.numpad-hint {
+  font-size: .82rem; font-weight: 700; color: var(--text-light);
+  text-align: center; letter-spacing: .03em;
+  display: flex; gap: 16px; justify-content: center;
+}
+.numpad-hint span { display: flex; align-items: center; gap: 4px; }
+.nk {
+  font-family: var(--font-head); font-size: 1.4rem; font-weight: 800;
+  background: var(--panel); border: 2px solid var(--border);
+  border-radius: 12px; padding: 12px 0; text-align: center;
+  cursor: pointer; transition: background .12s, transform .1s, border-color .12s;
+  color: var(--text); user-select: none;
+}
+.nk:hover  { background: var(--panel2); border-color: var(--minute-color); }
+.nk:active { transform: scale(.93); background: var(--panel2); }
+.nk.nk-del { font-size: 1.1rem; background: #fff0f0; border-color: #f5c0c0; color: #c0392b; }
+.nk.nk-del:hover { background: #fcd8d8; }
+.nk.nk-ok  { background: var(--success); color: #fff; border-color: var(--success); font-size: 1rem; }
+.nk.nk-ok:hover { filter: brightness(1.08); }
 
 .check-btn {
   font-family: var(--font-head); font-weight: 800; font-size: 1.1rem;
@@ -300,7 +358,31 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
   .digital-display { padding: 10px 14px; }
   .digit-val { font-size: 2.4rem; min-width: 40px; }
   .digit-btn { width: 40px; height: 30px; }
+  /* SKRYTÍ KLÁVESNICE NA MOBILU */
+  #numpad, .numpad-hint { 
+    display: none !important; 
+  }
+
+  /* OPTIMALIZACE PROSTŘEDÍ PRO ABSENCI SCROLLOVÁNÍ */
+  /* Lehce zmenšíme cvičné hodiny */
+  #practice-analog-svg { 
+    width: 220px !important; 
+    height: 220px !important; 
+  }
+  
+  /* Zmenšíme nadpisy */
+  .practice-prompt { 
+    font-size: 1.2rem; 
+    margin-bottom: 6px; 
+  }
+
+  /* Šipky uděláme ještě vyšší pro palec */
+  .spin-btn { 
+    height: 60px; 
+    font-size: 2.2rem; 
+  }
 }
+
 </style>
 </head>
 <body>
@@ -463,7 +545,7 @@ const i18n = {
     diffFive: 'Po 5 minutách',
     diffExact: 'Přesný čas',
     promptSetAnalog: 'Nastav ručičky na čas:',
-    promptSetDigital: 'Zapiš čas z hodin:',
+    promptSetDigital: 'Zapiš čas ze hodin:',
     checkBtn: '✔ Zkontrolovat',
     correct: '🎉 Výborně! Správně!',
     wrong: '💡 Zkus to znovu! Správný čas byl',
@@ -857,26 +939,123 @@ function startNewQuestion() {
     setupPracticeDrag(practiceAnalogSVG);
 
   } else {
-    // Show analog clock → child types digital time
+    // Show analog clock → child types digital time via spinner + numpad
     layout.innerHTML = `
       <div style="flex:1;min-width:280px;display:flex;flex-direction:column;align-items:center;gap:12px;">
         <div class="clock-label">${t('analogClock')}</div>
         <svg id="practice-analog-svg" width="300" height="300" viewBox="0 0 320 320"></svg>
       </div>
-      <div style="flex:1;min-width:260px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+      <div style="flex:1;min-width:260px;display:flex;flex-direction:column;align-items:center;gap:14px;">
         <div class="practice-prompt">${t('promptSetDigital')}</div>
-        <div class="digital-input-row">
-          <input class="time-input hour-input" type="number" id="inp-hour" min="0" max="23" placeholder="HH">
-          <span class="time-colon-input">:</span>
-          <input class="time-input" type="number" id="inp-min" min="0" max="59" placeholder="MM">
-        </div>
+        <div class="dig-input-widget" id="dig-input-widget"></div>
         <button class="check-btn" onclick="checkAnswer()">${t('checkBtn')}</button>
       </div>`;
     practiceAnalogSVG = document.getElementById('practice-analog-svg');
     renderClock(practiceAnalogSVG, h, m);
-    // Focus hour input for convenience
-    setTimeout(() => document.getElementById('inp-hour')?.focus(), 50);
+    buildDigInputWidget(document.getElementById('dig-input-widget'));
   }
+}
+
+/* ============================================================
+   DIGITAL INPUT WIDGET  (spinner + numpad)
+   ============================================================ */
+// Shared mutable state for the widget — read by checkAnswer
+const digWidget = { h: 0, m: 0, focus: 'hour' }; // focus: 'hour'|'min'
+
+function buildDigInputWidget(container) {
+  digWidget.h = 0; digWidget.m = 0; digWidget.focus = 'hour';
+
+  function render() {
+    const hStr = String(digWidget.h).padStart(2,'0');
+    const mStr = String(digWidget.m).padStart(2,'0');
+    container.innerHTML = `
+      <!-- Spinner row -->
+      <div class="spinner-row">
+        <div class="spinner-group">
+          <button class="spin-btn up hour-spin" onclick="digWidgetSpin('h',1)">▲</button>
+          <div class="spin-display hour-disp${digWidget.focus==='hour'?' active-inp':''}"
+               onclick="digWidget.focus='hour';buildDigInputWidget(document.getElementById('dig-input-widget'))"
+               style="cursor:pointer">${hStr}</div>
+          <button class="spin-btn down hour-spin" onclick="digWidgetSpin('h',-1)">▼</button>
+        </div>
+        <div class="spin-colon">:</div>
+        <div class="spinner-group">
+          <button class="spin-btn up" onclick="digWidgetSpin('m',1)">▲</button>
+          <div class="spin-display min-disp${digWidget.focus==='min'?' active-inp':''}"
+               onclick="digWidget.focus='min';buildDigInputWidget(document.getElementById('dig-input-widget'))"
+               style="cursor:pointer">${mStr}</div>
+          <button class="spin-btn down" onclick="digWidgetSpin('m',-1)">▼</button>
+        </div>
+      </div>
+      <!-- Focus hint -->
+      <div class="numpad-hint">
+        <span style="color:var(--hour-color)">■ ${digWidget.focus==='hour'? (state.lang==='cs'?'Hodiny':'Hours') : (state.lang==='cs'?'Hodiny':'Hours')}</span>
+        <span style="color:var(--minute-color)">■ ${state.lang==='cs'?'Minuty':'Minutes'}</span>
+      </div>
+      <!-- Numpad -->
+      <div class="numpad" id="numpad">
+        ${[1,2,3,4,5,6,7,8,9].map(n=>`<div class="nk" onclick="digWidgetKey(${n})">${n}</div>`).join('')}
+        <div class="nk nk-del" onclick="digWidgetKey('del')">⌫</div>
+        <div class="nk" onclick="digWidgetKey(0)">0</div>
+        <div class="nk nk-ok" onclick="digWidgetKey('tab')">${state.lang==='cs'?'min →':'min →'}</div>
+      </div>`;
+  }
+
+  render();
+  // expose render so spin/key functions can re-render
+  digWidget._render = render;
+}
+
+function digWidgetSpin(part, dir) {
+  if (part === 'h') {
+    digWidget.h = (digWidget.h + dir + 24) % 24;
+    digWidget.focus = 'hour';
+  } else {
+    digWidget.m = (digWidget.m + dir + 60) % 60;
+    digWidget.focus = 'min';
+  }
+  digWidget._render && digWidget._render();
+}
+
+// Numpad digit entry — accumulates up to 2 digits then auto-switches
+const _numBuf = { val: '' };
+function digWidgetKey(key) {
+  const container = document.getElementById('dig-input-widget');
+  if (!container) return;
+
+  if (key === 'del') {
+    _numBuf.val = _numBuf.val.slice(0,-1);
+    if (digWidget.focus === 'hour') digWidget.h = parseInt(_numBuf.val||'0');
+    else                            digWidget.m = parseInt(_numBuf.val||'0');
+    digWidget._render && digWidget._render();
+    return;
+  }
+  if (key === 'tab') {
+    // Switch focus hour→min, and if already on min do nothing
+    _numBuf.val = '';
+    digWidget.focus = digWidget.focus === 'hour' ? 'min' : 'hour';
+    digWidget._render && digWidget._render();
+    return;
+  }
+
+  // digit 0-9
+  _numBuf.val += String(key);
+  if (digWidget.focus === 'hour') {
+    const v = parseInt(_numBuf.val);
+    digWidget.h = Math.min(v, 23);
+    // Auto-switch after 2 digits OR if first digit >2
+    if (_numBuf.val.length >= 2 || parseInt(_numBuf.val[0]) > 2) {
+      _numBuf.val = '';
+      digWidget.focus = 'min';
+    }
+  } else {
+    const v = parseInt(_numBuf.val);
+    digWidget.m = Math.min(v, 59);
+    if (_numBuf.val.length >= 2 || parseInt(_numBuf.val[0]) > 5) {
+      _numBuf.val = '';
+    }
+  }
+  digWidget._render && digWidget._render();
 }
 
 function checkAnswer() {
@@ -891,9 +1070,8 @@ function checkAnswer() {
     const am = practiceClockState.m;
     correct = (ah === th && am === m);
   } else {
-    const ih = parseInt(document.getElementById('inp-hour')?.value);
-    const im = parseInt(document.getElementById('inp-min')?.value);
-    if (isNaN(ih) || isNaN(im)) return; // nothing entered yet
+    const ih = digWidget.h;
+    const im = digWidget.m;
     // Accept both 12h and 24h input
     correct = ((ih % 12 === h % 12 || ih === h) && im === m);
   }
