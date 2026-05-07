@@ -348,6 +348,30 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
 }
 .star-pop { animation: popIn .45s cubic-bezier(.36,.07,.19,.97) both; }
 
+/* ── OPTIMALIZACE PRO TABLETY A IPAD MINI (Zamezení scrolování) ── */
+@media (max-width: 950px), (max-height: 900px) {
+  /* Zmenšení mezer v layoutu */
+  .practice-layout, .learn-layout { gap: 16px; }
+  .card { padding: 16px; margin-bottom: 10px; }
+  
+  /* Celkové zmenšení SVG ciferníků z 320 na 240px */
+  #practice-analog-svg, #analog-svg {
+    width: 240px !important; 
+    height: 240px !important;
+  }
+  
+  /* Zhuštění a zmenšení klávesnice a šipek */
+  .dig-input-widget { gap: 6px; }
+  .numpad { width: 200px; gap: 4px; }
+  .nk { padding: 8px 0; font-size: 1.2rem; }
+  .spin-btn { height: 44px; }
+  .spin-display { font-size: 3rem; }
+  
+  /* Kompaktnější nápisy */
+  .practice-prompt { font-size: 1.2rem; margin-bottom: 8px; }
+  .clock-label { font-size: 1.1rem; }
+}
+
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 @media (max-width: 600px) {
   header { padding: 10px 14px; }
@@ -358,40 +382,23 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
   .digital-display { padding: 10px 14px; }
   .digit-val { font-size: 2.4rem; min-width: 40px; }
   .digit-btn { width: 40px; height: 30px; }
+
   /* SKRYTÍ KLÁVESNICE NA MOBILU */
-  #numpad, .numpad-hint { 
-    display: none !important; 
-  }
+  #numpad, .numpad-hint { display: none !important; }
 
   /* OPTIMALIZACE PROSTŘEDÍ PRO ABSENCI SCROLLOVÁNÍ */
-  /* Lehce zmenšíme cvičné hodiny */
-  #practice-analog-svg { 
-    width: 220px !important; 
-    height: 220px !important; 
-  }
-  
-  /* Zmenšíme nadpisy */
-  .practice-prompt { 
-    font-size: 1.2rem; 
-    margin-bottom: 6px; 
-  }
+  #practice-analog-svg { width: 220px !important; height: 220px !important; }
+  .practice-prompt { font-size: 1.2rem; margin-bottom: 6px; }
 
   /* Šipky uděláme ještě vyšší pro palec */
-  .spin-btn { 
-    height: 60px; 
-    font-size: 2.2rem; 
-  }
+  .spin-btn { height: 60px; font-size: 2.2rem; }
 }
-
 </style>
 </head>
 <body>
 
 <canvas id="confetti-canvas"></canvas>
 
-<!-- ══════════════════════════════════════════════════════════
-     HEADER
-════════════════════════════════════════════════════════════ -->
 <header>
   <div class="logo">🕐 <span data-i18n="appTitle">Učíme se čas</span></div>
   <div class="header-right">
@@ -405,7 +412,6 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
   </div>
 </header>
 
-<!-- Settings panel -->
 <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
   <div id="settings-panel">
     <div class="settings-grid">
@@ -427,7 +433,6 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
   </div>
 </div>
 
-<!-- ── NAV TABS ─────────────────────────────────────────── -->
 <nav>
   <button class="tab-btn active" id="tab-learn" onclick="switchTab('learn')" data-i18n="modeLearn">📖 Výuka</button>
   <button class="tab-btn" id="tab-practice" onclick="switchTab('practice')" data-i18n="modePractice">🎯 Procvičování</button>
@@ -435,19 +440,14 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
 
 <main>
 
-<!-- ══════════════════════════════════════════════════════════
-     MODE A – LEARNING
-════════════════════════════════════════════════════════════ -->
 <div id="mode-learn" class="active">
   <div class="card">
     <div class="learn-layout">
-      <!-- ANALOG -->
       <div class="clock-wrapper">
         <div class="clock-label" data-i18n="analogClock">Analogové hodiny</div>
         <svg id="analog-svg" width="320" height="320" viewBox="0 0 320 320"></svg>
         <div class="time-text-display" id="learn-time-text">–</div>
       </div>
-      <!-- DIGITAL -->
       <div class="clock-wrapper">
         <div class="clock-label" data-i18n="digitalClock">Digitální hodiny</div>
         <div class="digital-display">
@@ -469,12 +469,8 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     MODE B – PRACTICE
-════════════════════════════════════════════════════════════ -->
 <div id="mode-practice">
   <div class="card">
-    <!-- controls -->
     <div class="practice-top">
       <select class="submode-select" id="submode-select" onchange="saveSettings()">
         <option value="digital2analog" data-i18n-opt="subDigToAna">Digitální → Analogové</option>
@@ -492,8 +488,7 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
     </div>
 
     <div class="practice-layout" id="practice-layout">
-      <!-- dynamically filled -->
-    </div>
+      </div>
 
     <div class="feedback-msg" id="feedback-msg"></div>
   </div>
@@ -699,8 +694,8 @@ function buildClockFace(svgEl) {
 }
 
 function drawHands(svgEl, h, m) {
-  // Remove old hands
-  svgEl.querySelectorAll('.clock-hand, .hand-cap').forEach(e => e.remove());
+  // Smazání starých prvků (nyní mažeme i případná nová madla)
+  svgEl.querySelectorAll('.clock-hand, .hand-cap, .clock-handle, .hit-area').forEach(e => e.remove());
 
   const { hourAngle, minuteAngle } = timeToAngle(h, m);
 
@@ -709,27 +704,52 @@ function drawHands(svgEl, h, m) {
     return { x: CX + Math.cos(rad) * length, y: CY + Math.sin(rad) * length };
   }
 
-  // Hour hand
   const hEnd = handCoords(hourAngle, 80);
+  const mEnd = handCoords(minuteAngle, 112);
+
+  // --- 1. VIDITELNÉ RUČIČKY ---
   const hourHand = makeSVGElem('line', {
     x1: CX, y1: CY, x2: hEnd.x, y2: hEnd.y,
-    stroke: '#e05c6a', 'stroke-width': '8',
-    'stroke-linecap': 'round', class: 'clock-hand hour-hand'
+    stroke: '#e05c6a', 'stroke-width': '8', 'stroke-linecap': 'round', class: 'clock-hand hour-handle'
   });
-  svgEl.appendChild(hourHand);
-
-  // Minute hand
-  const mEnd = handCoords(minuteAngle, 112);
   const minuteHand = makeSVGElem('line', {
     x1: CX, y1: CY, x2: mEnd.x, y2: mEnd.y,
-    stroke: '#4a90d9', 'stroke-width': '5',
-    'stroke-linecap': 'round', class: 'clock-hand minute-hand'
+    stroke: '#4a90d9', 'stroke-width': '5', 'stroke-linecap': 'round', class: 'clock-hand min-handle'
   });
-  svgEl.appendChild(minuteHand);
 
-  // Centre cap
+  // --- 2. MADLA NA KONCÍCH RUČIČEK (Knobs) ---
+  const hKnob = makeSVGElem('circle', {
+    cx: hEnd.x, cy: hEnd.y, r: '12',
+    fill: '#e05c6a', class: 'clock-handle hour-handle', style: 'cursor: grab;'
+  });
+  const mKnob = makeSVGElem('circle', {
+    cx: mEnd.x, cy: mEnd.y, r: '12',
+    fill: '#4a90d9', class: 'clock-handle min-handle', style: 'cursor: grab;'
+  });
+
+  // --- 3. NEVIDITELNÉ OBŘÍ PLOCHY PRO SNADNÉ KLIKNUTÍ/TAŽENÍ ---
+  const hourHit = makeSVGElem('line', {
+    x1: CX, y1: CY, x2: hEnd.x, y2: hEnd.y,
+    stroke: 'transparent', 'stroke-width': '36', 'stroke-linecap': 'round', class: 'hit-area hour-handle', style: 'cursor: grab;'
+  });
+  const minHit = makeSVGElem('line', {
+    x1: CX, y1: CY, x2: mEnd.x, y2: mEnd.y,
+    stroke: 'transparent', 'stroke-width': '36', 'stroke-linecap': 'round', class: 'hit-area min-handle', style: 'cursor: grab;'
+  });
+
+  // Vložení prvků do SVG 
+  svgEl.appendChild(hourHand);
+  svgEl.appendChild(minuteHand);
+  svgEl.appendChild(hKnob);
+  svgEl.appendChild(mKnob);
+
+  // Středové kolečko
   svgEl.appendChild(makeSVGElem('circle', { cx: CX, cy: CY, r: '7', fill: '#2d3a52', class: 'hand-cap' }));
   svgEl.appendChild(makeSVGElem('circle', { cx: CX, cy: CY, r: '3.5', fill: '#fff', class: 'hand-cap' }));
+
+  // Neviditelné hit zóny musí být přidány úplně nakonec, aby ležely vizuálně navrchu
+  svgEl.appendChild(hourHit);
+  svgEl.appendChild(minHit);
 }
 
 function renderClock(svgEl, h, m) {
@@ -747,13 +767,12 @@ function angleToDeg(dx, dy) {
 }
 
 function setupDrag(svgEl, onTimeChange) {
-  let dragging = null; // 'hour' | 'minute'
+  let dragging = null;
 
   function getAngle(e) {
     const rect = svgEl.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    // map to SVG coords
     const scaleX = 320 / rect.width;
     const scaleY = 320 / rect.height;
     const dx = (clientX - rect.left) * scaleX - CX;
@@ -761,32 +780,31 @@ function setupDrag(svgEl, onTimeChange) {
     return angleToDeg(dx, dy);
   }
 
-  function getNearHand(angle) {
-    // Check if closer to hour or minute hand angle
-    const { hourAngle, minuteAngle } = timeToAngle(state.hours, state.minutes);
-    const dHour = Math.abs(((angle - hourAngle + 540) % 360) - 180);
-    const dMin  = Math.abs(((angle - minuteAngle + 540) % 360) - 180);
-    return dHour < dMin ? 'hour' : 'minute';
-  }
-
-  svgEl.addEventListener('mousedown', start);
-  svgEl.addEventListener('touchstart', start, { passive: true });
-
   function start(e) {
-    const angle = getAngle(e);
-    dragging = getNearHand(angle);
-    update(angle);
-  }
-
-  window.addEventListener('mousemove', move);
-  window.addEventListener('touchmove', move, { passive: true });
-  function move(e) {
-    if (!dragging) return;
+    const cls = (e.target && e.target.getAttribute('class')) || '';
+    // 1. Přednost má konkrétní zasažená třída ručičky
+    if (cls.includes('hour-handle')) dragging = 'hour';
+    else if (cls.includes('min-handle')) dragging = 'minute';
+    else {
+      // 2. Fallback: Pokud uživatel klikne kamsi mimo, spočítáme co bylo blíž
+      const angle = getAngle(e);
+      const { hourAngle, minuteAngle } = timeToAngle(state.hours, state.minutes);
+      const dHour = Math.abs(((angle - hourAngle + 540) % 360) - 180);
+      const dMin  = Math.abs(((angle - minuteAngle + 540) % 360) - 180);
+      dragging = dHour < dMin ? 'hour' : 'minute';
+    }
     update(getAngle(e));
   }
 
-  window.addEventListener('mouseup', () => dragging = null);
-  window.addEventListener('touchend', () => dragging = null);
+  function move(e) { if (dragging) update(getAngle(e)); }
+  function stop() { dragging = null; }
+
+  svgEl.addEventListener('mousedown', start);
+  svgEl.addEventListener('touchstart', start, { passive: true });
+  window.addEventListener('mousemove', move);
+  window.addEventListener('touchmove', move, { passive: true });
+  window.addEventListener('mouseup', stop);
+  window.addEventListener('touchend', stop);
 
   function update(angle) {
     if (dragging === 'hour') {
@@ -794,7 +812,7 @@ function setupDrag(svgEl, onTimeChange) {
       state.hours = (state.hours >= 12 ? h + 12 : h);
       if (state.hours >= 24) state.hours -= 12;
       if (state.hours < 0) state.hours += 12;
-    } else {
+    } else if (dragging === 'minute') {
       state.minutes = Math.round(angle / 6) % 60;
       if (state.minutes < 0) state.minutes += 60;
     }
@@ -832,30 +850,21 @@ let practiceAnalogSVG = null;
 const practiceClockState = { h: 12, m: 0 };
 
 function generateTarget() {
-  // diff-select value = minute step directly:
-  //   60 = celé hodiny (minutes always 0)
-  //   30 = půlhodiny   (0 or 30)
-  //   15 = čtvrthodiny (0, 15, 30, 45)
-  //    5 = po 5 min    (0,5,10,...,55)
-  //    1 = přesný čas  (0–59)
   const step = parseInt(document.getElementById('diff-select').value);
 
   if (step === 60) {
-    // Whole hours only — minute is always 0
     state.practiceTarget.m = 0;
   } else {
-    const slots = Math.floor(60 / step); // e.g. step=15 → 4 slots: 0,15,30,45
+    const slots = Math.floor(60 / step);
     state.practiceTarget.m = Math.floor(Math.random() * slots) * step;
   }
   state.practiceTarget.h = Math.floor(Math.random() * 12) + 1; // 1–12
 
-  // Reset the practice clock to 12:00 so child has to actually move it
   practiceClockState.h = 12;
   practiceClockState.m = 0;
 }
 
 function setupPracticeDrag(svgEl) {
-  // Like setupDrag but reads/writes practiceClockState, not global state
   let dragging = null;
 
   function getAngle(e) {
@@ -869,33 +878,22 @@ function setupPracticeDrag(svgEl) {
     return angleToDeg(dx, dy);
   }
 
-  function getNearHand(angle) {
-    const { hourAngle, minuteAngle } = timeToAngle(practiceClockState.h, practiceClockState.m);
-    const dHour = Math.abs(((angle - hourAngle + 540) % 360) - 180);
-    const dMin  = Math.abs(((angle - minuteAngle + 540) % 360) - 180);
-    return dHour < dMin ? 'hour' : 'minute';
-  }
-
-  function update(angle) {
-    if (dragging === 'hour') {
-      let h = Math.round(angle / 30) % 12;
-      // Preserve AM/PM based on current value
-      practiceClockState.h = practiceClockState.h >= 12 ? h + 12 : h;
-      if (practiceClockState.h >= 24) practiceClockState.h -= 12;
-      if (practiceClockState.h < 0) practiceClockState.h += 12;
-    } else {
-      practiceClockState.m = Math.round(angle / 6) % 60;
-      if (practiceClockState.m < 0) practiceClockState.m += 60;
-    }
-    renderClock(svgEl, practiceClockState.h, practiceClockState.m);
-  }
-
   function start(e) {
-    dragging = getNearHand(getAngle(e));
+    const cls = (e.target && e.target.getAttribute('class')) || '';
+    if (cls.includes('hour-handle')) dragging = 'hour';
+    else if (cls.includes('min-handle')) dragging = 'minute';
+    else {
+      const angle = getAngle(e);
+      const { hourAngle, minuteAngle } = timeToAngle(practiceClockState.h, practiceClockState.m);
+      const dHour = Math.abs(((angle - hourAngle + 540) % 360) - 180);
+      const dMin  = Math.abs(((angle - minuteAngle + 540) % 360) - 180);
+      dragging = dHour < dMin ? 'hour' : 'minute';
+    }
     update(getAngle(e));
   }
+
   function move(e) { if (dragging) update(getAngle(e)); }
-  function stop()  { dragging = null; }
+  function stop() { dragging = null; }
 
   svgEl.addEventListener('mousedown', start);
   svgEl.addEventListener('touchstart', start, { passive: true });
@@ -903,6 +901,20 @@ function setupPracticeDrag(svgEl) {
   window.addEventListener('touchmove', move, { passive: true });
   window.addEventListener('mouseup', stop);
   window.addEventListener('touchend', stop);
+
+  function update(angle) {
+    if (dragging === 'hour') {
+      let h = Math.round(angle / 30) % 12;
+      practiceClockState.h = practiceClockState.h >= 12 ? h + 12 : h;
+      if (practiceClockState.h >= 24) practiceClockState.h -= 12;
+      if (practiceClockState.h < 0) practiceClockState.h += 12;
+    } else if (dragging === 'minute') {
+      practiceClockState.m = Math.round(angle / 6) % 60;
+      if (practiceClockState.m < 0) practiceClockState.m += 60;
+    }
+    // Používáme oddělený state pro practice hodiny
+    renderClock(svgEl, practiceClockState.h, practiceClockState.m);
+  }
 }
 
 function startNewQuestion() {
@@ -923,7 +935,6 @@ function startNewQuestion() {
   const lang = state.lang;
 
   if (state.practiceCurrentSubmode === 'digital2analog') {
-    // Show digital time → child sets analog hands
     layout.innerHTML = `
       <div style="flex:1;min-width:260px;display:flex;flex-direction:column;align-items:center;gap:12px;">
         <div class="practice-prompt">${t('promptSetAnalog')}<br><span class="prompt-time">${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}</span></div>
@@ -939,7 +950,6 @@ function startNewQuestion() {
     setupPracticeDrag(practiceAnalogSVG);
 
   } else {
-    // Show analog clock → child types digital time via spinner + numpad
     layout.innerHTML = `
       <div style="flex:1;min-width:280px;display:flex;flex-direction:column;align-items:center;gap:12px;">
         <div class="clock-label">${t('analogClock')}</div>
@@ -969,7 +979,6 @@ function buildDigInputWidget(container) {
     const hStr = String(digWidget.h).padStart(2,'0');
     const mStr = String(digWidget.m).padStart(2,'0');
     container.innerHTML = `
-      <!-- Spinner row -->
       <div class="spinner-row">
         <div class="spinner-group">
           <button class="spin-btn up hour-spin" onclick="digWidgetSpin('h',1)">▲</button>
@@ -987,12 +996,10 @@ function buildDigInputWidget(container) {
           <button class="spin-btn down" onclick="digWidgetSpin('m',-1)">▼</button>
         </div>
       </div>
-      <!-- Focus hint -->
       <div class="numpad-hint">
         <span style="color:var(--hour-color)">■ ${digWidget.focus==='hour'? (state.lang==='cs'?'Hodiny':'Hours') : (state.lang==='cs'?'Hodiny':'Hours')}</span>
         <span style="color:var(--minute-color)">■ ${state.lang==='cs'?'Minuty':'Minutes'}</span>
       </div>
-      <!-- Numpad -->
       <div class="numpad" id="numpad">
         ${[1,2,3,4,5,6,7,8,9].map(n=>`<div class="nk" onclick="digWidgetKey(${n})">${n}</div>`).join('')}
         <div class="nk nk-del" onclick="digWidgetKey('del')">⌫</div>
@@ -1090,8 +1097,8 @@ function checkAnswer() {
     fb.textContent = `${t('wrong')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
     // Blink hint on the practice analog clock
     if (practiceAnalogSVG) {
-      const hHand = practiceAnalogSVG.querySelector('.hour-hand');
-      const mHand = practiceAnalogSVG.querySelector('.minute-hand');
+      const hHand = practiceAnalogSVG.querySelector('.hour-handle');
+      const mHand = practiceAnalogSVG.querySelector('.min-handle');
       if (hHand) { hHand.classList.add('blink-hour');   setTimeout(() => hHand.classList.remove('blink-hour'),   3000); }
       if (mHand) { mHand.classList.add('blink-minute'); setTimeout(() => mHand.classList.remove('blink-minute'), 3000); }
       // After blink, snap to correct answer
