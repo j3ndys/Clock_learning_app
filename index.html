@@ -510,15 +510,15 @@ select.psel{
         <div class="dig-panel">
           <div class="dig-disp">
             <div class="dg">
-              <button class="db" onclick="adjL('h',1)">▲</button>
+              <button class="db" data-rep="adjL" data-part="h" data-d="1">▲</button>
               <div class="dv hv" id="dh">10</div>
-              <button class="db" onclick="adjL('h',-1)">▼</button>
+              <button class="db" data-rep="adjL" data-part="h" data-d="-1">▼</button>
             </div>
             <div class="dc">:</div>
             <div class="dg">
-              <button class="db" onclick="adjL('m',1)">▲</button>
+              <button class="db" data-rep="adjL" data-part="m" data-d="1">▲</button>
               <div class="dv mv" id="dm">10</div>
-              <button class="db" onclick="adjL('m',-1)">▼</button>
+              <button class="db" data-rep="adjL" data-part="m" data-d="-1">▼</button>
             </div>
           </div>
           <div class="time-lbl" id="time-txt">–</div>
@@ -716,28 +716,32 @@ function setupDrag(svg,cs,onUp){
   function applyAngle(dx,dy){
     const a=a2d(dx,dy);
     if(drag==='hour'){
-      // Float hour angle: 0–360 where 0=12:00, includes minute contribution
-      // We keep the current minute so the hour hand stays smooth.
-      // rawHour is 0–12 (float), we snap to nearest whole hour for the stored value
-      // but preserve the AMPM half.
-      const rawHour=(a/30)%12;                 // 0–12 float
-      const h12=Math.round(rawHour)%12;        // 0–11 integer
+      // Drag hour hand: compute float hour from angle, preserve AM/PM
+      const rawHour=(a/30+12)%12;           // 0–12 float
       const wasAft=cs.h>=12;
-      cs.h=wasAft?h12+12:h12;
-      if(cs.h>=24)cs.h-=12;
-      if(cs.h<0)cs.h+=12;
-      // Note: minute stays unchanged — hour hand position recalculates with current minutes
+      // Snap to nearest minute-aligned position for stored h (integer) + update float
+      cs.hf=wasAft?rawHour+12:rawHour;
+      if(cs.hf>=24)cs.hf-=12;
+      if(cs.hf<0)cs.hf+=12;
+      cs.h=Math.round(cs.hf)%24;
+      // Derive minutes from the fractional part of the hour
+      const frac=(cs.hf%1+1)%1;
+      cs.m=Math.round(frac*60)%60;
     } else {
-      // CONTINUOUS minute tracking — detect wrap-around so it never snaps back
+      // Drag minute hand: continuous delta tracking
       if(lastMinAngle===null)lastMinAngle=a;
       let delta=a-lastMinAngle;
-      // Normalise delta to [-180, +180] so short arc is always used
       if(delta>180)delta-=360;
       if(delta<-180)delta+=360;
-      cs.m=((cs.m+Math.round(delta/6))%60+60)%60;
+      const minuteDelta=delta/6;  // degrees → minutes (float)
+      // Update float hour continuously: every 60 min = 1 hour on the hand
+      if(!cs.hf)cs.hf=cs.h+(cs.m/60);
+      cs.hf=(cs.hf+minuteDelta/60+24)%24;
+      cs.h=Math.floor(cs.hf)%24;
+      cs.m=((cs.m+Math.round(minuteDelta))%60+60)%60;
       lastMinAngle=a;
     }
-    renderClock(svg,cs.h,cs.m);
+    renderClock(svg,cs.hf,cs.m);
     onUp&&onUp();
   }
 
@@ -751,6 +755,8 @@ function setupDrag(svg,cs,onUp){
         :tgt.classList.contains('hit-m')?'min'
         :nearHand(dx,dy);
     lastMinAngle=null;  // reset continuous tracking on each new grab
+    // Initialise float hour from current integer state
+    if(!cs.hf)cs.hf=cs.h+(cs.m/60);
     window._draggingClock=true;
     // Capture so pointermove fires even outside the element
     svg.setPointerCapture(e.pointerId);
@@ -765,7 +771,10 @@ function setupDrag(svg,cs,onUp){
   });
 
   // ── Pointer up / cancel ──────────────────────────────────
-  function endDrag(){drag=null;lastMinAngle=null;window._draggingClock=false;}
+  function endDrag(){
+    if(cs.hf!==undefined)cs.h=Math.floor(cs.hf)%24;
+    drag=null;lastMinAngle=null;window._draggingClock=false;
+  }
   svg.addEventListener('pointerup',endDrag);
   svg.addEventListener('pointercancel',endDrag);
 }
@@ -773,11 +782,11 @@ function setupDrag(svg,cs,onUp){
 /* ============================================================
    LEARN MODE
 ============================================================ */
-const LS={h:10,m:10};
+const LS={h:10,m:10,hf:10};
 
 function updLearn(){
   const svg=document.getElementById('asvg');
-  renderClock(svg,LS.h,LS.m);
+  renderClock(svg,LS.hf,LS.m);
   document.getElementById('dh').textContent=String(LS.h).padStart(2,'0');
   document.getElementById('dm').textContent=String(LS.m).padStart(2,'0');
   document.getElementById('time-txt').textContent=TX[S.lang].tl(LS.h,LS.m);
@@ -785,6 +794,7 @@ function updLearn(){
 function adjL(part,d){
   if(part==='h')LS.h=(LS.h+d+24)%24;
   else          LS.m=(LS.m+d+60)%60;
+  LS.hf=LS.h+(LS.m/60);
   updLearn();
 }
 
@@ -792,13 +802,13 @@ function adjL(part,d){
    PRACTICE
 ============================================================ */
 let pSVG=null;
-const PC={h:12,m:0};
+const PC={h:12,m:0,hf:12};
 
 function genTarget(){
   const step=parseInt(document.getElementById('dif').value);
   S.pTarget.m=step===60?0:Math.floor(Math.random()*(60/step))*step;
   S.pTarget.h=Math.floor(Math.random()*12)+1;
-  PC.h=12;PC.m=0;
+  PC.h=12;PC.m=0;PC.hf=12;
 }
 
 // Holds the auto-advance timer so we can cancel it on skip
@@ -863,7 +873,8 @@ function newQ(){
 function adjP(part,d){
   if(part==='h')PC.h=(PC.h+d+24)%24;
   else          PC.m=(PC.m+d+60)%60;
-  if(pSVG)renderClock(pSVG,PC.h,PC.m);
+  PC.hf=PC.h+(PC.m/60);
+  if(pSVG)renderClock(pSVG,PC.hf,PC.m);
 }
 
 /* ============================================================
@@ -881,15 +892,15 @@ function buildDIW(c){
       <div class="sp-col">
         <div class="srow">
           <div class="sgrp">
-            <button class="sbtn up hs" onclick="dws('h',1)">▲</button>
+            <button class="sbtn up hs" data-rep="dws" data-part="h" data-d="1">▲</button>
             <div class="sdsp hd${ha}" onclick="DW.focus='hour';DW._r()">${hs}</div>
-            <button class="sbtn dn hs" onclick="dws('h',-1)">▼</button>
+            <button class="sbtn dn hs" data-rep="dws" data-part="h" data-d="-1">▼</button>
           </div>
           <div class="scol">:</div>
           <div class="sgrp">
-            <button class="sbtn up" onclick="dws('m',1)">▲</button>
+            <button class="sbtn up" data-rep="dws" data-part="m" data-d="1">▲</button>
             <div class="sdsp md${ma}" onclick="DW.focus='min';DW._r()">${ms}</div>
-            <button class="sbtn dn" onclick="dws('m',-1)">▼</button>
+            <button class="sbtn dn" data-rep="dws" data-part="m" data-d="-1">▼</button>
           </div>
         </div>
         <div class="sp-hint">
@@ -1071,10 +1082,36 @@ function loadStore(){
   document.getElementById('sc').textContent=S.stars;
 }
 
+/* ============================================================
+   HOLD-TO-REPEAT  —  buttons with [data-rep]
+   First fire immediately on pointerdown, then after 380ms
+   initial delay repeats every 80ms until pointer released.
+============================================================ */
+(function(){
+  let repTimer=null,repInterval=null;
+  function fire(btn){
+    const fn=btn.dataset.rep,part=btn.dataset.part,d=parseInt(btn.dataset.d);
+    if(fn==='adjL')adjL(part,d);
+    else if(fn==='adjP')adjP(part,d);
+    else if(fn==='dws')dws(part,d);
+  }
+  function stop(){clearTimeout(repTimer);clearInterval(repInterval);repTimer=repInterval=null;}
+  document.addEventListener('pointerdown',e=>{
+    const btn=e.target.closest('[data-rep]');
+    if(!btn)return;
+    e.preventDefault();
+    fire(btn);stop();
+    repTimer=setTimeout(()=>{repInterval=setInterval(()=>fire(btn),80);},380);
+  },{passive:false});
+  document.addEventListener('pointerup',stop);
+  document.addEventListener('pointercancel',stop);
+})();
+
 function init(){
   loadStore();applyLang();
   const svg=document.getElementById('asvg');
-  renderClock(svg,LS.h,LS.m);
+  LS.hf=LS.h+(LS.m/60);
+  renderClock(svg,LS.hf,LS.m);
   setupDrag(svg,LS,updLearn);
   updLearn();
 }
