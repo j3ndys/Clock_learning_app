@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Učíme se číst čas</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@400;600;700;800&display=swap');
@@ -18,6 +18,13 @@
   --fh:'Baloo 2',cursive; --fb:'Nunito',sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* Prevent double-tap zoom on all interactive elements */
+button, .nk, .hc, .tab, .hbtn, .sbtn, .sdsp, .chk-btn, .skip-btn, .btn-new, .set-num button {
+  touch-action: manipulation;
+}
+/* No text selection anywhere in the app */
+body { user-select: none; -webkit-user-select: none; }
 
 /* ── FULL-VIEWPORT SHELL ─────────────────────────────────── */
 html,body{height:100%;overflow:hidden}
