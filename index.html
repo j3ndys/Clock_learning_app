@@ -70,8 +70,13 @@ header{
   transition:max-height .28s ease;
   background:#fffbf0;border-bottom:2px solid #ffe0a0;
 }
-#set-wrap.open{max-height:64px}
-.set-grid{display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding:8px 16px}
+#set-wrap.open{max-height:160px}
+.set-grid{display:flex;gap:14px 22px;flex-wrap:wrap;align-items:center;padding:8px 16px}
+/* Number stepper in settings */
+.set-num{display:flex;align-items:center;gap:5px}
+.set-num button{width:26px;height:26px;border:2px solid var(--brd);border-radius:8px;background:var(--p2);color:var(--txt);font-size:1rem;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .14s}
+.set-num button:hover{background:var(--M);color:#fff;border-color:var(--M)}
+.set-num span{min-width:28px;text-align:center;font-weight:800;font-size:.95rem}
 .set-item{display:flex;align-items:center;gap:7px}
 .set-item label{font-weight:700;cursor:pointer;font-size:.84rem}
 .sw{position:relative;display:inline-block;width:42px;height:23px}
@@ -133,8 +138,10 @@ main{
 /* The SVG itself uses a JS-driven inline width/height (see resizeSVGs) */
 .svg-box svg{
   display:block;
-  touch-action:none;cursor:pointer;
-  /* fallback static size */
+  touch-action:none;        /* browser must not steal pointer for scroll/zoom */
+  user-select:none;         /* no text selection during drag */
+  -webkit-user-select:none;
+  cursor:pointer;
   width:min(100%,320px);
   height:min(100%,320px);
   max-width:340px;max-height:340px;
@@ -380,6 +387,23 @@ select.psel{
 .nk.ok:hover{filter:brightness(1.08)}
 
 /* ── MISC ────────────────────────────────────────────────── */
+/* Skip button (shown after wrong answer) */
+.skip-btn{
+  flex-shrink:0;font-family:var(--fh);font-weight:700;
+  font-size:clamp(.76rem,1.6vw,.9rem);
+  background:none;color:var(--mut);border:2px solid var(--brd);
+  border-radius:50px;padding:clamp(5px,.9vh,8px) clamp(14px,2vw,22px);
+  cursor:pointer;transition:all .16s;margin-top:4px;
+}
+.skip-btn:hover{background:var(--warn);color:#fff;border-color:var(--warn)}
+
+/* Countdown badge shown inside correct feedback */
+.countdown{
+  display:inline-block;
+  background:rgba(0,0,0,.12);border-radius:50px;
+  padding:1px 10px;font-size:.85em;margin-left:8px;
+  font-family:var(--fb);font-weight:800;
+}
 #cc{position:fixed;inset:0;pointer-events:none;z-index:9999}
 @keyframes blinkR{0%,100%{opacity:1}50%{opacity:.08}}
 @keyframes blinkB{0%,100%{opacity:1}50%{opacity:.08}}
@@ -424,6 +448,23 @@ select.psel{
       <label class="sw"><input type="checkbox" id="tmin" checked><span class="sw-sl"></span></label>
       <label for="tmin" data-i18n="showMin">Zobrazit minutová čísla</label>
     </div>
+    <div class="set-item">
+      <label data-i18n="setDelay">Auto-postup po správné (s):</label>
+      <div class="set-num">
+        <button onclick="adjSetting('delay',-1)">−</button>
+        <span id="set-delay-val">3</span>
+        <button onclick="adjSetting('delay',1)">+</button>
+      </div>
+    </div>
+    <div class="set-item">
+      <label data-i18n="setTries">Počet pokusů před nápovědou:</label>
+      <div class="set-num">
+        <button onclick="adjSetting('tries',-1)">−</button>
+        <span id="set-tries-val">3</span>
+        <button onclick="adjSetting('tries',1)">+</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -515,7 +556,10 @@ select.psel{
 const S={
   lang:'cs', s24:true, sMin:true, stars:0,
   pSub:'d2a', pDif:'60',
-  pTarget:{h:0,m:0}, pMode:'d2a', answered:false
+  pTarget:{h:0,m:0}, pMode:'d2a', answered:false,
+  tries:0,        // wrong attempts on current question
+  autoDelay:3,    // seconds before auto-advancing after correct answer
+  maxTries:3      // wrong attempts before showing correct answer
 };
 
 /* ============================================================
@@ -531,7 +575,11 @@ const TX={
     subDA:'Digitální → Analogové', subAD:'Analogové → Digitální', subMix:'Mix',
     d1:'Celé hodiny', d2:'Půlhodiny', d3:'Čtvrthodiny', d4:'Po 5 minutách', d5:'Přesný čas',
     setA:'Nastav ručičky na:', setD:'Zapiš čas ze hodin:',
-    chk:'✔ Zkontrolovat', ok:'🎉 Výborně! Správně!', err:'💡 Správný čas byl',
+    chk:'✔ Zkontrolovat', ok:'🎉 Výborně! Správně!',
+    err:'💡 Zkus to znovu!', errAns:'💡 Správný čas byl',
+    skip:'Přeskočit →',
+    setDelay:'Auto-postup po správné (s):',
+    setTries:'Pokusů před nápovědou:',
     hod:'hod', min:'min', hLbl:'Hodiny', mLbl:'Minuty', tabLbl:'min →',
     tl:(h,m)=>{const x=h%12||12,n=(x%12)+1;if(!m)return`${x} hodin přesně`;if(m===30)return`půl ${n}`;if(m===15)return`čtvrt na ${n}`;if(m===45)return`tři čtvrtě na ${n}`;return`${x}:${String(m).padStart(2,'0')}`;}
   },
@@ -544,7 +592,11 @@ const TX={
     subDA:'Digital → Analog', subAD:'Analog → Digital', subMix:'Mix',
     d1:'Whole hours', d2:'Half hours', d3:'Quarters', d4:'5-min steps', d5:'Exact minutes',
     setA:'Set the hands to:', setD:'Write the time shown:',
-    chk:'✔ Check', ok:'🎉 Excellent! Correct!', err:'💡 Correct time was',
+    chk:'✔ Check', ok:'🎉 Excellent! Correct!',
+    err:'💡 Try again!', errAns:'💡 Correct time was',
+    skip:'Skip →',
+    setDelay:'Auto-advance after correct (s):',
+    setTries:'Attempts before hint:',
     hod:'hr', min:'min', hLbl:'Hours', mLbl:'Minutes', tabLbl:'min →',
     tl:(h,m)=>{const x=h%12||12,ap=h<12?'AM':'PM',n=(x%12)+1;if(!m)return`${x}:00 ${ap}`;if(m===30)return`Half past ${x}`;if(m===15)return`Quarter past ${x}`;if(m===45)return`Quarter to ${n}`;return`${x}:${String(m).padStart(2,'0')} ${ap}`;}
   }
@@ -593,13 +645,25 @@ function drawHands(svg,h,m){
   const{ha,ma}=ang(h,m);
   const pt=(a,l)=>{const r=(a-90)*Math.PI/180;return{x:CX+Math.cos(r)*l,y:CY+Math.sin(r)*l};};
   const he=pt(ha,80),me=pt(ma,112);
-  // Wide transparent hit zones FIRST (lower z-order within SVG)
-  const hHit=mk('line',{x1:CX,y1:CY,x2:he.x,y2:he.y,stroke:'transparent','stroke-width':'36','stroke-linecap':'round',class:'ch hit-h',style:'cursor:grab'});
-  const mHit=mk('line',{x1:CX,y1:CY,x2:me.x,y2:me.y,stroke:'transparent','stroke-width':'36','stroke-linecap':'round',class:'ch hit-m',style:'cursor:grab'});
-  svg.appendChild(hHit);svg.appendChild(mHit);
-  // Visible hands on top (pointer-events:none so hit zones stay active)
-  svg.appendChild(mk('line',{x1:CX,y1:CY,x2:he.x,y2:he.y,stroke:'#e05c6a','stroke-width':'8','stroke-linecap':'round',class:'ch hour-hand',style:'pointer-events:none'}));
-  svg.appendChild(mk('line',{x1:CX,y1:CY,x2:me.x,y2:me.y,stroke:'#4a90d9','stroke-width':'5','stroke-linecap':'round',class:'ch min-hand',style:'pointer-events:none'}));
+
+  // Wide transparent hit zones — large enough for fat fingers
+  // They use pointer-events so Pointer Events API works on them
+  const hHit=mk('line',{x1:CX,y1:CY,x2:he.x,y2:he.y,
+    stroke:'rgba(255,255,255,.01)','stroke-width':'44','stroke-linecap':'round',
+    class:'ch hit-h',style:'cursor:grab;touch-action:none'});
+  const mHit=mk('line',{x1:CX,y1:CY,x2:me.x,y2:me.y,
+    stroke:'rgba(255,255,255,.01)','stroke-width':'44','stroke-linecap':'round',
+    class:'ch hit-m',style:'cursor:grab;touch-action:none'});
+  svg.appendChild(hHit);
+  svg.appendChild(mHit);
+
+  // Visible hands (pointer-events:none — hits go to the zones above)
+  svg.appendChild(mk('line',{x1:CX,y1:CY,x2:he.x,y2:he.y,
+    stroke:'#e05c6a','stroke-width':'8','stroke-linecap':'round',
+    class:'ch hour-hand',style:'pointer-events:none'}));
+  svg.appendChild(mk('line',{x1:CX,y1:CY,x2:me.x,y2:me.y,
+    stroke:'#4a90d9','stroke-width':'5','stroke-linecap':'round',
+    class:'ch min-hand',style:'pointer-events:none'}));
   svg.appendChild(mk('circle',{cx:CX,cy:CY,r:'7',fill:'#2d3a52',class:'cc',style:'pointer-events:none'}));
   svg.appendChild(mk('circle',{cx:CX,cy:CY,r:'3.5',fill:'#fff',class:'cc',style:'pointer-events:none'}));
 }
@@ -607,49 +671,96 @@ function drawHands(svg,h,m){
 function renderClock(svg,h,m){buildFace(svg);drawHands(svg,h,m);}
 
 /* ============================================================
-   DRAG  —  wide transparent hit areas + fallback nearest-hand
+   DRAG  —  Pointer Events API
+   • Works identically for mouse, touch, stylus
+   • setPointerCapture → events keep coming even outside SVG
+   • touch-action:none on SVG → browser never steals the gesture
+   • selectstart blocked → no text selection during drag
+   • Hour hand: smooth float angle (includes minute offset)
+   • Minute hand: continuous wrap-around, no snapping to ±180°
 ============================================================ */
-function a2d(dx,dy){let a=Math.atan2(dy,dx)*180/Math.PI+90;if(a<0)a+=360;return a;}
+function a2d(dx,dy){let a=Math.atan2(dy,dx)*180/Math.PI+90;return((a%360)+360)%360;}
+
+// Block text selection globally while dragging
+document.addEventListener('selectstart',e=>{if(window._draggingClock)e.preventDefault();});
 
 function setupDrag(svg,cs,onUp){
-  let drag=null;
-  function svgPt(e){
+  // Ensure SVG itself never scrolls/pans on touch
+  svg.style.touchAction='none';
+
+  let drag=null;   // 'hour' | 'min' | null
+  let lastMinAngle=null; // for continuous minute tracking across 0/360 boundary
+
+  function svgCoords(e){
     const r=svg.getBoundingClientRect();
-    const cx=e.touches?e.touches[0].clientX:e.clientX;
-    const cy=e.touches?e.touches[0].clientY:e.clientY;
-    return{dx:(cx-r.left)*(320/r.width)-CX,dy:(cy-r.top)*(320/r.height)-CY};
+    return{
+      dx:(e.clientX-r.left)*(320/r.width)-CX,
+      dy:(e.clientY-r.top)*(320/r.height)-CY
+    };
   }
+
   function nearHand(dx,dy){
     const a=a2d(dx,dy),{ha,ma}=ang(cs.h,cs.m);
-    return Math.abs(((a-ha+540)%360)-180)<=Math.abs(((a-ma+540)%360)-180)?'hour':'min';
+    const dh=Math.abs(((a-ha+540)%360)-180);
+    const dm=Math.abs(((a-ma+540)%360)-180);
+    return dh<=dm?'hour':'min';
   }
+
   function applyAngle(dx,dy){
     const a=a2d(dx,dy);
     if(drag==='hour'){
-      const h12=Math.round(((a/30)%12+12)%12)%12;
-      cs.h=cs.h>=12?h12+12:h12;
-      if(cs.h>=24)cs.h-=12;if(cs.h<0)cs.h+=12;
+      // Float hour angle: 0–360 where 0=12:00, includes minute contribution
+      // We keep the current minute so the hour hand stays smooth.
+      // rawHour is 0–12 (float), we snap to nearest whole hour for the stored value
+      // but preserve the AMPM half.
+      const rawHour=(a/30)%12;                 // 0–12 float
+      const h12=Math.round(rawHour)%12;        // 0–11 integer
+      const wasAft=cs.h>=12;
+      cs.h=wasAft?h12+12:h12;
+      if(cs.h>=24)cs.h-=12;
+      if(cs.h<0)cs.h+=12;
+      // Note: minute stays unchanged — hour hand position recalculates with current minutes
     } else {
-      cs.m=((Math.round(a/6)%60)+60)%60;
+      // CONTINUOUS minute tracking — detect wrap-around so it never snaps back
+      if(lastMinAngle===null)lastMinAngle=a;
+      let delta=a-lastMinAngle;
+      // Normalise delta to [-180, +180] so short arc is always used
+      if(delta>180)delta-=360;
+      if(delta<-180)delta+=360;
+      cs.m=((cs.m+Math.round(delta/6))%60+60)%60;
+      lastMinAngle=a;
     }
-    renderClock(svg,cs.h,cs.m);onUp&&onUp();
+    renderClock(svg,cs.h,cs.m);
+    onUp&&onUp();
   }
-  svg.addEventListener('mousedown',e=>{
-    const{dx,dy}=svgPt(e);
+
+  // ── Pointer down ─────────────────────────────────────────
+  svg.addEventListener('pointerdown',e=>{
+    // Only primary button for mouse; any pointer for touch/pen
+    if(e.pointerType==='mouse'&&e.button!==0)return;
+    const{dx,dy}=svgCoords(e);
     const tgt=e.target;
-    drag=tgt.classList.contains('hit-h')?'hour':tgt.classList.contains('hit-m')?'min':nearHand(dx,dy);
-    e.preventDefault();applyAngle(dx,dy);
-  });
-  svg.addEventListener('touchstart',e=>{
-    const{dx,dy}=svgPt(e);
-    const tgt=e.target;
-    drag=tgt.classList.contains('hit-h')?'hour':tgt.classList.contains('hit-m')?'min':nearHand(dx,dy);
+    drag=tgt.classList.contains('hit-h')?'hour'
+        :tgt.classList.contains('hit-m')?'min'
+        :nearHand(dx,dy);
+    lastMinAngle=null;  // reset continuous tracking on each new grab
+    window._draggingClock=true;
+    // Capture so pointermove fires even outside the element
+    svg.setPointerCapture(e.pointerId);
     applyAngle(dx,dy);
-  },{passive:true});
-  window.addEventListener('mousemove',e=>{if(drag){const{dx,dy}=svgPt(e);applyAngle(dx,dy);}});
-  window.addEventListener('touchmove',e=>{if(drag){const{dx,dy}=svgPt(e);applyAngle(dx,dy);}},{passive:true});
-  window.addEventListener('mouseup',()=>drag=null);
-  window.addEventListener('touchend',()=>drag=null);
+    e.preventDefault();
+  });
+
+  // ── Pointer move ─────────────────────────────────────────
+  svg.addEventListener('pointermove',e=>{
+    if(!drag)return;
+    applyAngle(...Object.values(svgCoords(e)));
+  });
+
+  // ── Pointer up / cancel ──────────────────────────────────
+  function endDrag(){drag=null;lastMinAngle=null;window._draggingClock=false;}
+  svg.addEventListener('pointerup',endDrag);
+  svg.addEventListener('pointercancel',endDrag);
 }
 
 /* ============================================================
@@ -683,14 +794,20 @@ function genTarget(){
   PC.h=12;PC.m=0;
 }
 
+// Holds the auto-advance timer so we can cancel it on skip
+let autoTimer=null;
+
 function newQ(){
-  S.answered=false;genTarget();
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
+  S.answered=false;S.tries=0;genTarget();
   const sub=document.getElementById('sub').value;
   S.pMode=sub==='mix'?(Math.random()<.5?'d2a':'a2d'):sub;
   document.getElementById('prow').innerHTML='';
   const fb=document.getElementById('pfb');fb.className='fb';fb.textContent='';
   const{h,m}=S.pTarget,row=document.getElementById('prow');
 
+  // Both modes share the same action-area: chk-btn, skip-btn (hidden initially)
+  // They're placed by the dynamic innerHTML below.
   if(S.pMode==='d2a'){
     row.innerHTML=`
       <div class="p-col">
@@ -708,7 +825,10 @@ function newQ(){
           <button class="hc hm" onclick="adjP('m', 1)">${t('min')} ▶</button>
           <button class="hc hm" onclick="adjP('m', 5)">▶▶</button>
         </div>
-        <button class="chk-btn" onclick="chkAns()">${t('chk')}</button>
+        <div id="pact">
+          <button class="chk-btn" id="chk-b" onclick="chkAns()">${t('chk')}</button>
+          <button class="skip-btn" id="skip-b" style="display:none" onclick="newQ()">${t('skip')}</button>
+        </div>
       </div>`;
     pSVG=document.getElementById('psvg');
     renderClock(pSVG,PC.h,PC.m);
@@ -722,7 +842,10 @@ function newQ(){
       <div class="p-col">
         <div class="prac-prompt">${t('setD')}</div>
         <div class="diw" id="diw"></div>
-        <button class="chk-btn" onclick="chkAns()">${t('chk')}</button>
+        <div id="pact">
+          <button class="chk-btn" id="chk-b" onclick="chkAns()">${t('chk')}</button>
+          <button class="skip-btn" id="skip-b" style="display:none" onclick="newQ()">${t('skip')}</button>
+        </div>
       </div>`;
     pSVG=document.getElementById('psvg');
     renderClock(pSVG,h,m);
@@ -808,17 +931,52 @@ function chkAns(){
     ?(PC.h%12===h%12&&PC.m===m)
     :((DW.h%12===h%12||DW.h===h)&&DW.m===m);
   const fb=document.getElementById('pfb');
+  const chkB=document.getElementById('chk-b');
+  const skipB=document.getElementById('skip-b');
+
   if(ok){
-    S.answered=true;S.stars++;saveProg();updStars();
-    fb.className='fb ok';fb.textContent=t('ok');doConfetti();
+    S.answered=true;S.tries=0;S.stars++;saveProg();updStars();
+    doConfetti();
+    // Show correct feedback + countdown, replace chk-btn with Next btn
+    if(chkB)chkB.style.display='none';
+    if(skipB){skipB.style.display='none';}
+
+    // Start auto-advance countdown
+    let remaining=S.autoDelay;
+    fb.className='fb ok';
+    fb.innerHTML=`${t('ok')} <span class="countdown" id="cd">${remaining}</span>`;
+    autoTimer=setInterval(()=>{
+      remaining--;
+      const cd=document.getElementById('cd');
+      if(cd)cd.textContent=remaining;
+      if(remaining<=0){clearInterval(autoTimer);autoTimer=null;newQ();}
+    },1000);
+
   } else {
-    fb.className='fb err';
-    fb.textContent=`${t('err')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    S.tries++;
+    // Show skip button after first wrong attempt
+    if(skipB)skipB.style.display='';
+
+    if(S.tries>=S.maxTries){
+      // Reveal correct answer after maxTries
+      fb.className='fb err';
+      fb.textContent=`${t('errAns')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    } else {
+      // Just gentle "try again" + attempt counter
+      const left=S.maxTries-S.tries;
+      fb.className='fb err';
+      fb.textContent=`${t('err')} (${left}×)`;
+    }
+
+    // Blink hands on analog clock
     if(pSVG){
       const hh=pSVG.querySelector('.hour-hand'),mh=pSVG.querySelector('.min-hand');
       if(hh){hh.classList.add('bh');setTimeout(()=>hh.classList.remove('bh'),3200);}
       if(mh){mh.classList.add('bm');setTimeout(()=>mh.classList.remove('bm'),3200);}
-      setTimeout(()=>{PC.h=h;PC.m=m;renderClock(pSVG,h,m);},1500);
+      // After maxTries show correct time on clock
+      if(S.tries>=S.maxTries){
+        setTimeout(()=>{PC.h=h;PC.m=m;renderClock(pSVG,h,m);},1500);
+      }
     }
   }
 }
@@ -843,6 +1001,7 @@ function updStars(){
 }
 
 function switchTab(tab){
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
   document.getElementById('ml').classList.toggle('on',tab==='learn');
   document.getElementById('mp').classList.toggle('on',tab==='prac');
   document.getElementById('tab-learn').classList.toggle('on',tab==='learn');
@@ -867,11 +1026,24 @@ document.getElementById('set-btn').addEventListener('click',()=>document.getElem
 document.getElementById('t24').addEventListener('change',e=>{S.s24=e.target.checked;saveSett();updLearn();if(pSVG)renderClock(pSVG,S.pTarget.h,S.pTarget.m);});
 document.getElementById('tmin').addEventListener('change',e=>{S.sMin=e.target.checked;saveSett();updLearn();if(pSVG)renderClock(pSVG,S.pTarget.h,S.pTarget.m);});
 
+function adjSetting(key,d){
+  if(key==='delay'){
+    S.autoDelay=Math.max(1,Math.min(10,S.autoDelay+d));
+    document.getElementById('set-delay-val').textContent=S.autoDelay;
+  } else {
+    S.maxTries=Math.max(1,Math.min(9,S.maxTries+d));
+    document.getElementById('set-tries-val').textContent=S.maxTries;
+  }
+  saveSett();
+}
+
 function saveProg(){localStorage.setItem('ca_stars',S.stars);localStorage.setItem('ca_lang',S.lang);}
 function saveSett(){
   localStorage.setItem('ca_s24',S.s24);localStorage.setItem('ca_sMin',S.sMin);
   localStorage.setItem('ca_sub',document.getElementById('sub').value);
   localStorage.setItem('ca_dif',document.getElementById('dif').value);
+  localStorage.setItem('ca_delay',S.autoDelay);
+  localStorage.setItem('ca_tries',S.maxTries);
 }
 function loadStore(){
   const st=localStorage.getItem('ca_stars');if(st)S.stars=parseInt(st);
@@ -881,10 +1053,14 @@ function loadStore(){
   const sub=localStorage.getItem('ca_sub');if(sub)S.pSub=sub;
   const dif=localStorage.getItem('ca_dif');const vd=['60','30','15','5','1'];
   S.pDif=(dif&&vd.includes(dif))?dif:'60';
+  const dl=localStorage.getItem('ca_delay');if(dl)S.autoDelay=Math.max(1,Math.min(10,parseInt(dl)));
+  const tr=localStorage.getItem('ca_tries');if(tr)S.maxTries=Math.max(1,Math.min(9,parseInt(tr)));
   document.getElementById('t24').checked=S.s24;
   document.getElementById('tmin').checked=S.sMin;
   document.getElementById('sub').value=S.pSub;
   document.getElementById('dif').value=S.pDif;
+  document.getElementById('set-delay-val').textContent=S.autoDelay;
+  document.getElementById('set-tries-val').textContent=S.maxTries;
   document.getElementById('sc').textContent=S.stars;
 }
 
