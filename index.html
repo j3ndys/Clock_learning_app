@@ -2,1241 +2,899 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Učíme se číst čas / Learning to Read Time</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Učíme se číst čas</title>
 <style>
-/* ============================================================
-   DESIGN SYSTEM — Pastel Toy aesthetic, rounded, friendly
-   ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@400;600;700;800&display=swap');
 
-:root {
-  --hour-color:   #e05c6a;   /* warm red  – hour hand & hour elements */
-  --minute-color: #4a90d9;   /* blue      – minute hand & minute elements */
-  --bg:           #fef9f0;
-  --panel:        #ffffff;
-  --panel2:       #f0f6ff;
-  --border:       #dde4f0;
-  --text:         #2d3a52;
-  --text-light:   #7a88a8;
-  --accent:       #ffb347;
-  --success:      #5cb85c;
-  --radius:       18px;
-  --shadow:       0 4px 24px rgba(74,100,180,.13);
-  --font-head:    'Baloo 2', cursive;
-  --font-body:    'Nunito', sans-serif;
+/* ── TOKENS ──────────────────────────────────────────────── */
+:root{
+  --H:#e05c6a; --M:#4a90d9;
+  --bg:#fef9f0; --panel:#fff; --p2:#f0f6ff;
+  --brd:#dde4f0; --txt:#2d3a52; --mut:#7a88a8;
+  --ok:#5cb85c; --warn:#ffb347;
+  --r:14px;
+  --sh:0 4px 22px rgba(74,100,180,.12);
+  --fh:'Baloo 2',cursive; --fb:'Nunito',sans-serif;
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* ZÁKAZ OZNAČOVÁNÍ TEXTU A PŘIBLIŽOVÁNÍ */
-body {
-  font-family: var(--font-body);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
+/* ── FULL-VIEWPORT SHELL ─────────────────────────────────── */
+html,body{height:100%;overflow:hidden}
+body{
+  display:flex;flex-direction:column;
+  font-family:var(--fb);color:var(--txt);
+  background:var(--bg);
   background-image:
-    radial-gradient(circle at 10% 20%, #ffe8ec 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, #e0ecff 0%, transparent 40%);
-  
-  -webkit-user-select: none; /* Safari */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* IE10+/Edge */
-  user-select: none; /* Standard */
-  touch-action: manipulation; /* Optimalizace pro dotyk */
+    radial-gradient(circle at 8% 12%,#ffe8ec 0%,transparent 40%),
+    radial-gradient(circle at 93% 88%,#deeeff 0%,transparent 40%);
 }
 
-/* ── HEADER ─────────────────────────────────────────────── */
-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 24px;
-  background: var(--panel);
-  border-bottom: 2px solid var(--border);
-  box-shadow: 0 2px 12px rgba(74,100,180,.08);
-  flex-wrap: wrap; gap: 10px;
+/* ── HEADER ──────────────────────────────────────────────── */
+header{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5px 16px;gap:8px;flex-wrap:wrap;
+  background:var(--panel);
+  border-bottom:2px solid var(--brd);
+  box-shadow:0 2px 8px rgba(74,100,180,.08);
+  min-height:46px;
 }
-.logo {
-  font-family: var(--font-head);
-  font-size: 1.6rem; font-weight: 800;
-  color: var(--hour-color);
-  letter-spacing: -.5px;
-  display: flex; align-items: center; gap: 8px;
+.logo{
+  font-family:var(--fh);font-size:clamp(.92rem,2.2vw,1.35rem);
+  font-weight:800;color:var(--H);
+  display:flex;align-items:center;gap:6px;
 }
-.logo span { color: var(--minute-color); }
-.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.logo span{color:var(--M)}
+.hdr-r{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.stars-box{
+  display:flex;align-items:center;gap:5px;
+  background:#fff8e7;border:2px solid #ffcc66;
+  border-radius:50px;padding:4px 12px;
+  font-weight:800;font-size:clamp(.75rem,1.8vw,.95rem);color:#b8860b;
+}
+.hbtn{
+  border-radius:50px;padding:4px 12px;
+  font-family:var(--fb);font-weight:700;
+  font-size:clamp(.72rem,1.6vw,.88rem);
+  cursor:pointer;transition:all .18s;color:var(--txt);
+  border:2px solid var(--brd);background:var(--p2);
+}
+.hbtn:hover{background:var(--M);color:#fff;border-color:var(--M)}
+.hbtn.set{background:none;color:var(--mut)}
+.hbtn.set:hover{border-color:var(--warn);color:var(--warn);background:none}
 
-/* Stars counter */
-.stars-box {
-  display: flex; align-items: center; gap: 6px;
-  background: #fff8e7; border: 2px solid #ffcc66;
-  border-radius: 50px; padding: 6px 16px;
-  font-weight: 800; font-size: 1.1rem; color: #b8860b;
+/* ── SETTINGS SLIDE-DOWN ─────────────────────────────────── */
+#set-wrap{
+  flex-shrink:0;overflow:hidden;max-height:0;
+  transition:max-height .28s ease;
+  background:#fffbf0;border-bottom:2px solid #ffe0a0;
 }
-.stars-box .star-icon { font-size: 1.3rem; }
+#set-wrap.open{max-height:64px}
+.set-grid{display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding:8px 16px}
+.set-item{display:flex;align-items:center;gap:7px}
+.set-item label{font-weight:700;cursor:pointer;font-size:.84rem}
+.sw{position:relative;display:inline-block;width:42px;height:23px}
+.sw input{opacity:0;width:0;height:0}
+.sw-sl{position:absolute;cursor:pointer;inset:0;background:#ccd;border-radius:50px;transition:.28s}
+.sw-sl::before{content:'';position:absolute;height:17px;width:17px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.28s}
+input:checked+.sw-sl{background:var(--M)}
+input:checked+.sw-sl::before{transform:translateX(19px)}
 
-/* Language toggle */
-.lang-btn {
-  background: var(--panel2); border: 2px solid var(--border);
-  border-radius: 50px; padding: 6px 16px;
-  font-family: var(--font-body); font-weight: 700; font-size: .95rem;
-  cursor: pointer; transition: all .2s;
-  color: var(--text);
+/* ── TABS ────────────────────────────────────────────────── */
+nav{
+  flex-shrink:0;display:flex;gap:6px;padding:7px 16px 0;
+  background:var(--panel);border-bottom:2px solid var(--brd);
 }
-.lang-btn:hover { background: var(--minute-color); color: #fff; border-color: var(--minute-color); }
+.tab{
+  font-family:var(--fh);font-weight:700;
+  font-size:clamp(.8rem,1.9vw,.98rem);
+  padding:6px 20px;border-radius:var(--r) var(--r) 0 0;
+  border:2px solid transparent;border-bottom:none;
+  cursor:pointer;background:transparent;color:var(--mut);
+  transition:all .16s;position:relative;bottom:-2px;
+}
+.tab.on{background:var(--bg);border-color:var(--brd);color:var(--txt);border-bottom-color:var(--bg)}
+.tab:hover:not(.on){color:var(--txt);background:#f4f6ff}
 
-/* ── NAV TABS ────────────────────────────────────────────── */
-nav {
-  display: flex; gap: 10px; padding: 16px 24px 0;
-  border-bottom: 2px solid var(--border);
-  background: var(--panel);
-}
-.tab-btn {
-  font-family: var(--font-head); font-weight: 700; font-size: 1.05rem;
-  padding: 10px 28px; border-radius: var(--radius) var(--radius) 0 0;
-  border: 2px solid transparent; border-bottom: none;
-  cursor: pointer; background: transparent; color: var(--text-light);
-  transition: all .2s; position: relative; bottom: -2px;
-}
-.tab-btn.active {
-  background: var(--bg); border-color: var(--border);
-  color: var(--text); border-bottom-color: var(--bg);
-}
-.tab-btn:hover:not(.active) { color: var(--text); background: #f5f7ff; }
-
-/* ── MAIN CONTENT ────────────────────────────────────────── */
-main { padding: 20px; max-width: 1100px; margin: 0 auto; }
-
-/* ── SECTION CARDS ───────────────────────────────────────── */
-.card {
-  background: var(--panel);
-  border-radius: var(--radius);
-  border: 2px solid var(--border);
-  box-shadow: var(--shadow);
-  padding: 24px;
-  margin-bottom: 20px;
-}
-
-/* ── SETTINGS PANEL ─────────────────────────────────────── */
-.settings-toggle-btn {
-  background: none; border: 2px solid var(--border);
-  border-radius: 50px; padding: 7px 20px;
-  font-family: var(--font-body); font-weight: 700; font-size: .9rem;
-  cursor: pointer; color: var(--text-light); transition: all .2s;
-  display: flex; align-items: center; gap: 6px;
-}
-.settings-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-#settings-panel {
-  background: #fffbf0;
-  border: 2px solid #ffe0a0;
-  border-radius: var(--radius);
-  padding: 16px 20px;
-  margin-bottom: 16px;
-  display: none;
-}
-#settings-panel.open { display: block; }
-.settings-grid { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
-.setting-item { display: flex; align-items: center; gap: 10px; }
-.setting-item label { font-weight: 700; cursor: pointer; font-size: .95rem; }
-
-/* toggle switch */
-.toggle-switch { position: relative; display: inline-block; width: 48px; height: 26px; }
-.toggle-switch input { opacity: 0; width: 0; height: 0; }
-.toggle-slider {
-  position: absolute; cursor: pointer; inset: 0;
-  background: #ccd; border-radius: 50px;
-  transition: .3s;
-}
-.toggle-slider:before {
-  content: ''; position: absolute;
-  height: 20px; width: 20px; left: 3px; bottom: 3px;
-  background: white; border-radius: 50%; transition: .3s;
-}
-input:checked + .toggle-slider { background: var(--minute-color); }
-input:checked + .toggle-slider:before { transform: translateX(22px); }
-
-/* ── LEARNING MODE ───────────────────────────────────────── */
-#mode-learn { display: none; }
-#mode-practice { display: none; }
-#mode-learn.active, #mode-practice.active { display: block; }
-
-.learn-layout {
-  display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;
-  justify-content: center;
+/* ── MAIN ────────────────────────────────────────────────── */
+main{
+  flex:1 1 0;overflow:hidden;
+  display:flex;flex-direction:column;
+  padding:clamp(6px,1.2vh,14px) clamp(6px,1.4vw,16px);
 }
 
-/* ── CLOCK WRAPPER & RESPONSIVE SVG ──────────────────────── */
-.clock-wrapper {
-  display: flex; flex-direction: column; align-items: center; gap: 14px;
-  flex: 1; min-width: 280px; max-width: 420px; /* Umožní zvětšení kontejneru */
-}
-.clock-label {
-  font-family: var(--font-head); font-size: 1.2rem; font-weight: 700;
-  color: var(--text-light);
-}
-/* Tekutý SVG ciferník - maximalizuje se podle prostoru */
-svg#analog-svg, svg#practice-analog-svg {
-  width: 100% !important;
-  max-width: 400px; /* Maximální možná velikost na velkém monitoru */
-  height: auto !important;
-  aspect-ratio: 1 / 1;
-  cursor: pointer;
-  touch-action: none; /* Klíčové pro zamezení scrollování */
+/* ── MODE WRAPPERS ───────────────────────────────────────── */
+.mode{display:none;flex:1 1 0;flex-direction:column;overflow:hidden;min-height:0}
+.mode.on{display:flex}
+
+/* ── CARD ────────────────────────────────────────────────── */
+.card{
+  flex:1 1 0;min-height:0;overflow:hidden;
+  display:flex;flex-direction:column;
+  background:var(--panel);border-radius:var(--r);
+  border:2px solid var(--brd);box-shadow:var(--sh);
+  padding:clamp(8px,1.4vh,16px) clamp(8px,1.4vw,18px);
 }
 
-/* ── DIGITAL CLOCK ───────────────────────────────────────── */
-.digital-display {
-  display: flex; align-items: center; gap: 4px;
-  background: #1a2340; border-radius: 16px;
-  padding: 16px 24px; box-shadow: 0 4px 20px rgba(26,35,64,.4);
-  width: 100%; justify-content: center;
+/* ══════════════════════════════════════════════════════════
+   SVG SIZE HELPER
+   The svg-box grows to fill remaining column space.
+   The SVG inside takes the minimum of its container's w/h,
+   capped at 340px, so it stays square and never overflows.
+══════════════════════════════════════════════════════════ */
+.svg-box{
+  flex:1 1 0;min-height:0;min-width:0;
+  display:flex;align-items:center;justify-content:center;
+  /* Use container-size trick: explicit dimensions help the SVG size itself */
+  width:100%;
+  position:relative;
 }
-.digit-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.digit-btn {
-  background: #2a3560; border: none; border-radius: 8px;
-  color: #8ab4f8; font-size: 1.6rem; font-weight: 900; cursor: pointer;
-  width: 60px; height: 44px; display: flex; align-items: center; justify-content: center;
-  transition: background .15s;
-}
-.digit-btn:hover { background: var(--minute-color); color: #fff; }
-.digit-val {
-  font-family: 'Courier New', monospace; font-size: 3.8rem; font-weight: 700;
-  min-width: 60px; text-align: center; line-height: 1;
-}
-.digit-val.hour-val { color: var(--hour-color); }
-.digit-val.min-val  { color: var(--minute-color); }
-.digit-colon { font-size: 3.5rem; color: #8ab4f8; font-weight: 900; align-self: center; padding-bottom: 4px; }
-
-/* ── TIME LABEL ──────────────────────────────────────────── */
-.time-text-display {
-  font-family: var(--font-head); font-size: 1.4rem; font-weight: 700;
-  text-align: center; color: var(--text);
-  background: var(--panel2); border: 2px solid var(--border);
-  border-radius: 12px; padding: 10px 20px; width: 100%;
+/* The SVG itself uses a JS-driven inline width/height (see resizeSVGs) */
+.svg-box svg{
+  display:block;
+  touch-action:none;cursor:pointer;
+  /* fallback static size */
+  width:min(100%,320px);
+  height:min(100%,320px);
+  max-width:340px;max-height:340px;
+  flex-shrink:0;
 }
 
-/* ── PRACTICE MODE ───────────────────────────────────────── */
-.practice-top {
-  display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: center;
-  margin-bottom: 20px;
-}
-.difficulty-select, .submode-select {
-  font-family: var(--font-body); font-weight: 700; font-size: .95rem;
-  border: 2px solid var(--border); border-radius: 50px;
-  padding: 8px 18px; background: var(--panel); cursor: pointer;
-  color: var(--text); appearance: none; -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%237a88a8'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 14px center;
-  padding-right: 36px;
-}
-.btn-primary {
-  font-family: var(--font-head); font-weight: 700; font-size: 1.05rem;
-  background: var(--minute-color); color: #fff;
-  border: none; border-radius: 50px; padding: 10px 28px;
-  cursor: pointer; transition: all .2s; box-shadow: 0 3px 10px rgba(74,144,217,.3);
-}
-.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.btn-primary:active { transform: translateY(0); }
-
-.practice-layout {
-  display: flex; gap: 24px; align-items: center; flex-wrap: wrap;
-  justify-content: center;
-}
-.practice-prompt {
-  font-family: var(--font-head); font-size: 1.5rem; font-weight: 800;
-  text-align: center; margin-bottom: 12px;
-}
-.prompt-time {
-  font-size: 2.2rem; color: var(--hour-color);
+/* ── LABELS ──────────────────────────────────────────────── */
+.clk-lbl{
+  font-family:var(--fh);font-size:clamp(.78rem,1.8vw,1.05rem);
+  font-weight:700;color:var(--mut);white-space:nowrap;
+  flex-shrink:0;text-align:center;
+  letter-spacing:.02em;text-transform:uppercase;font-size:clamp(.65rem,1.4vw,.85rem);
 }
 
-/* ── DIGITAL INPUT WIDGET (practice) ─────────────────────── */
-.dig-input-widget {
-  display: flex; flex-direction: column; align-items: center; 
-  gap: 8px; width: 100%;
+/* ══════════════════════════════════════════════════════════
+   HAND-CONTROL BUTTONS
+══════════════════════════════════════════════════════════ */
+.hand-ctrl{
+  display:flex;gap:clamp(3px,.7vw,8px);
+  flex-wrap:wrap;justify-content:center;
+  flex-shrink:0;
+}
+.hc{
+  font-family:var(--fh);font-weight:800;
+  font-size:clamp(.7rem,1.5vw,.9rem);
+  border:none;border-radius:50px;cursor:pointer;
+  padding:clamp(4px,.8vh,8px) clamp(8px,1.2vw,14px);
+  transition:all .14s;display:flex;align-items:center;gap:3px;
+  flex-shrink:0;white-space:nowrap;
+}
+.hc.hh{background:#fde8ea;color:var(--H)}
+.hc.hh:hover{background:var(--H);color:#fff}
+.hc.hm{background:#e4eeff;color:var(--M)}
+.hc.hm:hover{background:var(--M);color:#fff}
+.hc:active{transform:scale(.93)}
+
+/* ══════════════════════════════════════════════════════════
+   LEARN MODE  —  2-column layout: analog LEFT, digital RIGHT
+   The two columns share equal width. The digital column
+   centres a large digital display vertically.
+══════════════════════════════════════════════════════════ */
+.learn-row{
+  flex:1 1 0;min-height:0;overflow:hidden;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:clamp(8px,2vw,28px);
+  align-items:center;
 }
 
-/* Spinner row */
-.spinner-row { display: flex; align-items: center; gap: 10px; }
-.spinner-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-
-/* ZVĚTŠENÉ ŠIPKY */
-.spin-btn {
-  width: 86px; height: 54px; 
-  border: none; border-radius: 12px;
-  font-size: 2rem; font-weight: 900; line-height: 1;
-  cursor: pointer; transition: background .15s, transform .1s;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 3px 8px rgba(74,144,217,.15);
-  touch-action: manipulation;
-}
-.spin-btn.up   { background: #e8f0fe; color: var(--minute-color); }
-.spin-btn.down { background: #e8f0fe; color: var(--minute-color); }
-.spin-btn:hover { filter: brightness(.93); transform: scale(1.06); }
-.spin-btn:active { transform: scale(.97); }
-.spin-btn.hour-spin.up, .spin-btn.hour-spin.down {
-  color: var(--hour-color); background: #fdecea;
+/* Each column is a flex-column */
+.l-col{
+  display:flex;flex-direction:column;
+  align-items:center;gap:clamp(5px,1vh,11px);
+  min-height:0;overflow:hidden;height:100%;
+  justify-content:center;
 }
 
-.spin-display {
-  font-family: 'Courier New', monospace; font-size: 3.8rem; font-weight: 700;
-  min-width: 86px; text-align: center; line-height: 1;
-  background: #1a2340; border-radius: 12px; padding: 6px 4px;
-  border: 3px solid transparent; transition: border-color .2s;
+/* ── DIGITAL DISPLAY (learn) ─────────────────────────────
+   Big, visually balanced dark panel with large numbers
+─────────────────────────────────────────────────────────── */
+.dig-panel{
+  display:flex;flex-direction:column;
+  align-items:center;gap:clamp(8px,1.5vh,18px);
+  width:100%;
 }
-.spin-display.hour-disp  { color: var(--hour-color);   border-color: #3d2020; }
-.spin-display.min-disp   { color: var(--minute-color); border-color: #1a2d4a; }
-.spin-display.active-inp { border-color: #fff !important; }
-
-.spin-colon {
-  font-size: 3.5rem; font-weight: 900; color: #6a80b0;
-  padding-bottom: 6px; user-select: none;
+.dig-disp{
+  display:flex;align-items:center;gap:clamp(4px,.8vw,10px);
+  background:#1a2340;border-radius:16px;
+  padding:clamp(12px,2.2vh,28px) clamp(18px,3.5vw,44px);
+  box-shadow:0 6px 24px rgba(26,35,64,.45);
 }
-
-/* Numpad */
-.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 240px; }
-.numpad-hint {
-  font-size: .85rem; font-weight: 700; color: var(--text-light);
-  text-align: center; letter-spacing: .03em; display: flex; gap: 16px; justify-content: center;
+.dg{display:flex;flex-direction:column;align-items:center;gap:clamp(4px,.8vh,8px)}
+.db{
+  background:#2a3660;border:none;border-radius:8px;
+  color:#7ab0f8;cursor:pointer;
+  width:clamp(38px,5.5vw,60px);height:clamp(28px,3.5vh,40px);
+  font-size:clamp(.95rem,2vw,1.4rem);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .13s;
 }
-.numpad-hint span { display: flex; align-items: center; gap: 4px; }
-.nk {
-  font-family: var(--font-head); font-size: 1.5rem; font-weight: 800;
-  background: var(--panel); border: 2px solid var(--border);
-  border-radius: 12px; padding: 14px 0; text-align: center;
-  cursor: pointer; transition: background .12s, transform .1s, border-color .12s;
-  color: var(--text); user-select: none; touch-action: manipulation;
+.db:hover{background:var(--M);color:#fff}
+.db:active{transform:scale(.92)}
+.dv{
+  font-family:'Courier New',monospace;
+  font-size:clamp(2.4rem,6vw,5rem);
+  font-weight:700;
+  min-width:clamp(50px,7vw,88px);
+  text-align:center;line-height:1;
 }
-.nk:hover  { background: var(--panel2); border-color: var(--minute-color); }
-.nk:active { transform: scale(.93); background: var(--panel2); }
-.nk.nk-del { font-size: 1.2rem; background: #fff0f0; border-color: #f5c0c0; color: #c0392b; }
-.nk.nk-del:hover { background: #fcd8d8; }
-.nk.nk-ok  { background: var(--success); color: #fff; border-color: var(--success); font-size: 1.1rem; }
-.nk.nk-ok:hover { filter: brightness(1.08); }
-
-.check-btn {
-  font-family: var(--font-head); font-weight: 800; font-size: 1.2rem;
-  background: var(--success); color: #fff; width: 100%; max-width: 240px;
-  border: none; border-radius: 50px; padding: 14px 36px;
-  cursor: pointer; transition: all .2s;
-  box-shadow: 0 4px 14px rgba(92,184,92,.35);
-  display: block; margin: 10px auto 0;
-}
-.check-btn:hover { filter: brightness(1.08); transform: translateY(-2px); }
-
-/* Feedback */
-.feedback-msg {
-  text-align: center; font-family: var(--font-head);
-  font-size: 1.4rem; font-weight: 800;
-  padding: 12px 20px; border-radius: 12px; margin-top: 16px;
-  min-height: 58px; transition: all .3s; display: flex; align-items: center; justify-content: center;
-}
-.feedback-msg.correct { background: #e6f9e6; color: #2e7d32; }
-.feedback-msg.wrong   { background: #fff0f0; color: #c0392b; }
-
-/* ── CONFETTI CANVAS ─────────────────────────────────────── */
-#confetti-canvas {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  pointer-events: none; z-index: 9999;
+.dv.hv{color:var(--H)}
+.dv.mv{color:var(--M)}
+.dc{
+  font-size:clamp(2.2rem,5.5vw,4.6rem);color:#6a88c0;
+  font-weight:900;align-self:center;padding-bottom:4px;
+  line-height:1;
 }
 
-/* ── HINT BLINK ANIMATION ────────────────────────────────── */
-@keyframes blinkRed   { 0%,100%{opacity:1} 50%{opacity:.15} }
-@keyframes blinkBlue  { 0%,100%{opacity:1} 50%{opacity:.15} }
-.blink-hour   { animation: blinkRed  .6s ease-in-out 4; }
-.blink-minute { animation: blinkBlue .6s ease-in-out 4; }
-
-/* ── SCORE ANIMATION ─────────────────────────────────────── */
-@keyframes popIn {
-  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
-  60%  { transform: scale(1.3) rotate(5deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0); opacity: 1; }
-}
-.star-pop { animation: popIn .45s cubic-bezier(.36,.07,.19,.97) both; }
-
-/* ── OPTIMALIZACE PRO TABLETY A IPAD MINI ── */
-@media (max-width: 950px), (max-height: 900px) {
-  main { padding: 12px; }
-  .card { padding: 16px; margin-bottom: 10px; }
-  .practice-layout, .learn-layout { gap: 12px; }
-  
-  /* Hodiny využijí co nejvíce prostoru, ale nepřetečou */
-  .clock-wrapper { min-width: 240px; }
-  svg#analog-svg, svg#practice-analog-svg { max-width: 340px; }
-  
-  .practice-prompt { font-size: 1.3rem; margin-bottom: 6px; }
-  .prompt-time { font-size: 1.8rem; }
-  .clock-label { font-size: 1.1rem; }
-  
-  /* Zhuštění a zmenšení klávesnice */
-  .dig-input-widget { gap: 6px; }
-  .numpad { width: 220px; gap: 6px; }
-  .nk { padding: 10px 0; font-size: 1.3rem; }
-  .spin-btn { height: 48px; }
-  .spin-display { font-size: 3.2rem; }
-  .check-btn { padding: 12px 24px; font-size: 1.1rem; }
+/* Time label below digital */
+.time-lbl{
+  font-family:var(--fh);
+  font-size:clamp(.9rem,2.2vw,1.4rem);
+  font-weight:700;text-align:center;color:var(--txt);
+  background:var(--p2);border:2px solid var(--brd);
+  border-radius:10px;padding:clamp(5px,1vh,10px) clamp(14px,2vw,24px);
+  white-space:nowrap;flex-shrink:0;width:100%;max-width:340px;
 }
 
-/* ── RESPONSIVE PRO MOBILY ───────────────────────────────── */
-@media (max-width: 600px) {
-  header { padding: 10px 14px; }
-  .logo { font-size: 1.2rem; }
-  nav { padding: 10px 14px 0; gap: 6px; }
-  .tab-btn { padding: 8px 16px; font-size: .95rem; }
-  
-  /* Skrytí klávesnice na malých displejích */
-  #numpad, .numpad-hint { display: none !important; }
+/* ══════════════════════════════════════════════════════════
+   PRACTICE MODE
+══════════════════════════════════════════════════════════ */
+.prac-top{
+  flex-shrink:0;
+  display:flex;gap:7px;flex-wrap:wrap;align-items:center;
+  margin-bottom:clamp(5px,.9vh,12px);
+}
+select.psel{
+  font-family:var(--fb);font-weight:700;
+  font-size:clamp(.72rem,1.6vw,.88rem);
+  border:2px solid var(--brd);border-radius:50px;
+  padding:5px 28px 5px 12px;
+  background:var(--panel);cursor:pointer;color:var(--txt);
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M0 0l5 7 5-7z' fill='%237a88a8'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+.btn-new{
+  font-family:var(--fh);font-weight:700;
+  font-size:clamp(.76rem,1.7vw,.94rem);
+  background:var(--M);color:#fff;border:none;border-radius:50px;
+  padding:6px 18px;cursor:pointer;transition:all .16s;
+  box-shadow:0 3px 10px rgba(74,144,217,.28);
+}
+.btn-new:hover{filter:brightness(1.1);transform:translateY(-1px)}
 
-  /* Hodiny se roztáhnou, ale ponechají místo na šipky */
-  svg#analog-svg, svg#practice-analog-svg { max-width: 260px; }
-  
-  .spin-btn { height: 60px; font-size: 2.2rem; width: 70px; }
-  .spin-display { min-width: 70px; font-size: 3rem; }
-  .digit-btn { width: 50px; height: 38px; }
-  .digit-val { font-size: 2.8rem; min-width: 50px; }
+.prac-body{flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.prac-row{
+  flex:1 1 0;min-height:0;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:clamp(6px,1.8vw,20px);
+  align-items:center;overflow:hidden;
+}
+.p-col{
+  display:flex;flex-direction:column;align-items:center;
+  gap:clamp(4px,.8vh,10px);
+  min-height:0;overflow:hidden;height:100%;
+  justify-content:center;
+}
+
+.prac-prompt{
+  font-family:var(--fh);font-size:clamp(.92rem,2.2vw,1.3rem);
+  font-weight:800;text-align:center;flex-shrink:0;
+}
+.ptime{
+  color:var(--H);
+  font-size:clamp(1.4rem,3.8vw,2.6rem);
+  display:block;line-height:1.1;
+}
+
+.chk-btn{
+  flex-shrink:0;font-family:var(--fh);font-weight:800;
+  font-size:clamp(.82rem,1.8vw,1rem);
+  background:var(--ok);color:#fff;border:none;
+  border-radius:50px;padding:clamp(7px,1.3vh,12px) clamp(20px,3vw,36px);
+  cursor:pointer;transition:all .16s;
+  box-shadow:0 3px 10px rgba(92,184,92,.3);
+}
+.chk-btn:hover{filter:brightness(1.08);transform:translateY(-2px)}
+
+.fb{
+  flex-shrink:0;text-align:center;font-family:var(--fh);
+  font-size:clamp(.82rem,1.9vw,1.12rem);font-weight:800;
+  padding:5px 14px;border-radius:9px;min-height:34px;
+  transition:all .28s;margin-top:3px;
+}
+.fb.ok{background:#e6f9e6;color:#2e7d32}
+.fb.err{background:#fff0f0;color:#c0392b}
+
+/* ══════════════════════════════════════════════════════════
+   DIGITAL INPUT WIDGET  (practice a2d)
+   Mobile (<600px): spinner only
+   Tablet+ (≥600px): spinner + numpad side-by-side
+══════════════════════════════════════════════════════════ */
+.diw{
+  display:flex;flex-direction:column;
+  align-items:center;gap:clamp(5px,1vh,10px);
+  flex-shrink:0;width:100%;
+}
+@media(min-width:600px){
+  .diw{flex-direction:row;align-items:flex-start;justify-content:center;gap:clamp(10px,2vw,24px)}
+}
+
+/* Spinner */
+.sp-col{display:flex;flex-direction:column;align-items:center;gap:clamp(4px,.8vh,9px)}
+.srow{display:flex;align-items:center;gap:clamp(3px,.8vw,8px)}
+.sgrp{display:flex;flex-direction:column;align-items:center;gap:2px}
+.sbtn{
+  width:clamp(42px,5.8vw,56px);height:clamp(30px,4vh,40px);
+  border:none;border-radius:9px;
+  font-size:clamp(.92rem,2vw,1.2rem);font-weight:900;
+  cursor:pointer;transition:background .12s,transform .09s;
+  display:flex;align-items:center;justify-content:center;
+}
+.sbtn.up,.sbtn.dn{background:#e4eeff;color:var(--M)}
+.sbtn.hs{color:var(--H)!important;background:#fde8ea!important}
+.sbtn:hover{filter:brightness(.9);transform:scale(1.07)}
+.sbtn:active{transform:scale(.94)}
+.sdsp{
+  font-family:'Courier New',monospace;
+  font-size:clamp(1.8rem,3.8vw,2.8rem);font-weight:700;
+  min-width:clamp(58px,7vw,76px);text-align:center;line-height:1;
+  background:#1a2340;border-radius:10px;
+  padding:clamp(5px,1vh,9px) 6px;
+  border:3px solid transparent;transition:border-color .16s;
+  cursor:pointer;user-select:none;
+}
+.sdsp.hd{color:var(--H);border-color:#3d2020}
+.sdsp.md{color:var(--M);border-color:#1a2d4a}
+.sdsp.act{border-color:#fff!important}
+.scol{font-size:clamp(1.8rem,3.8vw,2.8rem);font-weight:900;color:#6a80b0;padding-bottom:3px;user-select:none}
+.sp-hint{font-size:.75rem;font-weight:700;color:var(--mut);display:flex;gap:10px;justify-content:center}
+
+/* Numpad — hidden on mobile */
+.np-col{display:none;flex-direction:column;align-items:center;gap:5px}
+@media(min-width:600px){.np-col{display:flex}}
+.np-hint{font-size:.73rem;font-weight:700;color:var(--mut);display:flex;gap:9px;justify-content:center}
+.npg{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:clamp(4px,.7vw,7px);
+  width:clamp(148px,20vw,200px);
+}
+.nk{
+  font-family:var(--fh);font-size:clamp(.92rem,1.95vw,1.28rem);font-weight:800;
+  background:var(--panel);border:2px solid var(--brd);border-radius:9px;
+  padding:clamp(6px,1vh,11px) 0;text-align:center;
+  cursor:pointer;transition:background .1s,transform .09s;
+  color:var(--txt);user-select:none;
+}
+.nk:hover{background:var(--p2);border-color:var(--M)}
+.nk:active{transform:scale(.91)}
+.nk.del{background:#fff0f0;border-color:#f5c0c0;color:#c0392b;font-size:clamp(.8rem,1.5vw,.96rem)}
+.nk.del:hover{background:#fcd8d8}
+.nk.ok{background:var(--ok);color:#fff;border-color:var(--ok);font-size:clamp(.72rem,1.3vw,.88rem)}
+.nk.ok:hover{filter:brightness(1.08)}
+
+/* ── MISC ────────────────────────────────────────────────── */
+#cc{position:fixed;inset:0;pointer-events:none;z-index:9999}
+@keyframes blinkR{0%,100%{opacity:1}50%{opacity:.08}}
+@keyframes blinkB{0%,100%{opacity:1}50%{opacity:.08}}
+.bh{animation:blinkR .55s ease-in-out 5}
+.bm{animation:blinkB .55s ease-in-out 5}
+@keyframes popIn{
+  0%{transform:scale(0)rotate(-15deg);opacity:0}
+  60%{transform:scale(1.35)rotate(4deg);opacity:1}
+  100%{transform:scale(1)rotate(0);opacity:1}
+}
+.pop{animation:popIn .42s cubic-bezier(.36,.07,.19,.97) both}
+
+/* ── NARROW PORTRAIT: stack into single column ───────────── */
+@media(max-width:540px){
+  .learn-row,.prac-row{grid-template-columns:1fr;grid-template-rows:auto}
+  .l-col,.p-col{height:auto}
+  .svg-box svg{max-width:200px;max-height:200px}
 }
 </style>
 </head>
 <body>
+<canvas id="cc"></canvas>
 
-<canvas id="confetti-canvas"></canvas>
-
+<!-- ═══ HEADER ══════════════════════════════════════════════ -->
 <header>
   <div class="logo">🕐 <span data-i18n="appTitle">Učíme se čas</span></div>
-  <div class="header-right">
-    <div class="stars-box">
-      <span class="star-icon">⭐</span>
-      <span id="star-count">0</span>
-      <span data-i18n="stars">hvězdiček</span>
-    </div>
-    <button class="lang-btn" id="lang-toggle">🌐 EN</button>
-    <button class="settings-toggle-btn" id="settings-open-btn">⚙️ <span data-i18n="settings">Nastavení</span></button>
+  <div class="hdr-r">
+    <div class="stars-box">⭐ <span id="sc">0</span> <span data-i18n="stars">hvězdiček</span></div>
+    <button class="hbtn"     id="lang-btn">🌐 EN</button>
+    <button class="hbtn set" id="set-btn">⚙️ <span data-i18n="settings">Nastavení</span></button>
   </div>
 </header>
 
-<div style="max-width:1100px;margin:0 auto;padding:0 24px;">
-  <div id="settings-panel">
-    <div class="settings-grid">
-      <div class="setting-item">
-        <label class="toggle-switch">
-          <input type="checkbox" id="toggle-24h" checked>
-          <span class="toggle-slider"></span>
-        </label>
-        <label for="toggle-24h" data-i18n="show24h">Zobrazit 24h čísla</label>
-      </div>
-      <div class="setting-item">
-        <label class="toggle-switch">
-          <input type="checkbox" id="toggle-minutes" checked>
-          <span class="toggle-slider"></span>
-        </label>
-        <label for="toggle-minutes" data-i18n="showMinNums">Zobrazit minutová čísla</label>
-      </div>
+<!-- ═══ SETTINGS ════════════════════════════════════════════ -->
+<div id="set-wrap">
+  <div class="set-grid">
+    <div class="set-item">
+      <label class="sw"><input type="checkbox" id="t24" checked><span class="sw-sl"></span></label>
+      <label for="t24" data-i18n="show24h">Zobrazit 24h čísla</label>
+    </div>
+    <div class="set-item">
+      <label class="sw"><input type="checkbox" id="tmin" checked><span class="sw-sl"></span></label>
+      <label for="tmin" data-i18n="showMin">Zobrazit minutová čísla</label>
     </div>
   </div>
 </div>
 
+<!-- ═══ TABS ════════════════════════════════════════════════ -->
 <nav>
-  <button class="tab-btn active" id="tab-learn" onclick="switchTab('learn')" data-i18n="modeLearn">📖 Výuka</button>
-  <button class="tab-btn" id="tab-practice" onclick="switchTab('practice')" data-i18n="modePractice">🎯 Procvičování</button>
+  <button class="tab on" id="tab-learn" onclick="switchTab('learn')" data-i18n="mLearn">📖 Výuka</button>
+  <button class="tab"    id="tab-prac"  onclick="switchTab('prac')"  data-i18n="mPrac">🎯 Procvičování</button>
 </nav>
 
 <main>
 
-<div id="mode-learn" class="active">
+<!-- ═══ LEARN ════════════════════════════════════════════════ -->
+<div class="mode on" id="ml">
   <div class="card">
-    <div class="learn-layout">
-      <div class="clock-wrapper">
-        <div class="clock-label" data-i18n="analogClock">Analogové hodiny</div>
-        <svg id="analog-svg" viewBox="0 0 320 320"></svg>
-        <div class="time-text-display" id="learn-time-text">–</div>
-      </div>
-      <div class="clock-wrapper">
-        <div class="clock-label" data-i18n="digitalClock">Digitální hodiny</div>
-        <div class="digital-display">
-          <div class="digit-group">
-            <button class="digit-btn" onclick="changeDigitalTime('hour',1)">▲</button>
-            <div class="digit-val hour-val" id="dig-hour">12</div>
-            <button class="digit-btn" onclick="changeDigitalTime('hour',-1)">▼</button>
-          </div>
-          <div class="digit-colon">:</div>
-          <div class="digit-group">
-            <button class="digit-btn" onclick="changeDigitalTime('minute',1)">▲</button>
-            <div class="digit-val min-val" id="dig-min">00</div>
-            <button class="digit-btn" onclick="changeDigitalTime('minute',-1)">▼</button>
-          </div>
+    <div class="learn-row">
+
+      <!-- LEFT: Analog clock -->
+      <div class="l-col">
+        <div class="clk-lbl" data-i18n="aClk">Analogové hodiny</div>
+        <div class="svg-box">
+          <svg id="asvg" viewBox="0 0 320 320"></svg>
         </div>
-        <div style="margin-top:10px;text-align:center;font-weight:700;color:var(--text-light);font-size:.9rem;" data-i18n="clickArrows">Klikni na šipky nebo přetáhni ručičky</div>
+        <div class="hand-ctrl">
+          <button class="hc hh" onclick="adjL('h',-1)">◀ <span data-i18n="hod">hod</span></button>
+          <button class="hc hh" onclick="adjL('h', 1)"><span data-i18n="hod">hod</span> ▶</button>
+          <button class="hc hm" onclick="adjL('m',-5)">◀◀</button>
+          <button class="hc hm" onclick="adjL('m',-1)">◀ <span data-i18n="min">min</span></button>
+          <button class="hc hm" onclick="adjL('m', 1)"><span data-i18n="min">min</span> ▶</button>
+          <button class="hc hm" onclick="adjL('m', 5)">▶▶</button>
+        </div>
       </div>
+
+      <!-- RIGHT: Digital clock -->
+      <div class="l-col">
+        <div class="clk-lbl" data-i18n="dClk">Digitální hodiny</div>
+        <div class="dig-panel">
+          <div class="dig-disp">
+            <div class="dg">
+              <button class="db" onclick="adjL('h',1)">▲</button>
+              <div class="dv hv" id="dh">10</div>
+              <button class="db" onclick="adjL('h',-1)">▼</button>
+            </div>
+            <div class="dc">:</div>
+            <div class="dg">
+              <button class="db" onclick="adjL('m',1)">▲</button>
+              <div class="dv mv" id="dm">10</div>
+              <button class="db" onclick="adjL('m',-1)">▼</button>
+            </div>
+          </div>
+          <div class="time-lbl" id="time-txt">–</div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<div id="mode-practice">
+<!-- ═══ PRACTICE ═════════════════════════════════════════════ -->
+<div class="mode" id="mp">
   <div class="card">
-    <div class="practice-top">
-      <select class="submode-select" id="submode-select" onchange="saveSettings()">
-        <option value="digital2analog" data-i18n-opt="subDigToAna">Digitální → Analogové</option>
-        <option value="analog2digital" data-i18n-opt="subAnaTodig">Analogové → Digitální</option>
+    <div class="prac-top">
+      <select class="psel" id="sub" onchange="saveSett()">
+        <option value="d2a" data-i18n-opt="subDA">Digitální → Analogové</option>
+        <option value="a2d" data-i18n-opt="subAD">Analogové → Digitální</option>
         <option value="mix" data-i18n-opt="subMix">Mix</option>
       </select>
-      <select class="difficulty-select" id="diff-select" onchange="saveSettings()">
-        <option value="60" data-i18n-opt="diffWhole">Celé hodiny</option>
-        <option value="30" data-i18n-opt="diffHalf">Půlhodiny</option>
-        <option value="15" data-i18n-opt="diffQuarter">Čtvrthodiny</option>
-        <option value="5"  data-i18n-opt="diffFive">Po 5 minutách</option>
-        <option value="1"  data-i18n-opt="diffExact">Přesný čas</option>
+      <select class="psel" id="dif" onchange="saveSett()">
+        <option value="60" data-i18n-opt="d1">Celé hodiny</option>
+        <option value="30" data-i18n-opt="d2">Půlhodiny</option>
+        <option value="15" data-i18n-opt="d3">Čtvrthodiny</option>
+        <option value="5"  data-i18n-opt="d4">Po 5 minutách</option>
+        <option value="1"  data-i18n-opt="d5">Přesný čas</option>
       </select>
-      <button class="btn-primary" onclick="startNewQuestion()" data-i18n="newQuestion">Nová otázka ▶</button>
+      <button class="btn-new" onclick="newQ()" data-i18n="newQ">Nová otázka ▶</button>
     </div>
-
-    <div class="practice-layout" id="practice-layout">
-      </div>
-
-    <div class="feedback-msg" id="feedback-msg"></div>
+    <div class="prac-body">
+      <div class="prac-row" id="prow"></div>
+      <div class="fb" id="pfb"></div>
+    </div>
   </div>
 </div>
 
 </main>
 
 <script>
-const state = {
-  lang: 'cs',
-  hours: 10,
-  minutes: 10,
-  show24h: true,
-  showMinNums: true,
-  stars: 0,
-  practiceSubmode: 'digital2analog',
-  practiceDiff: 1,
-  practiceTarget: { h: 0, m: 0 },
-  practiceCurrentSubmode: 'digital2analog',
-  answered: false,
+/* ============================================================
+   STATE
+============================================================ */
+const S={
+  lang:'cs', s24:true, sMin:true, stars:0,
+  pSub:'d2a', pDif:'60',
+  pTarget:{h:0,m:0}, pMode:'d2a', answered:false
 };
 
-const i18n = {
-  cs: {
-    appTitle: 'Učíme se čas',
-    stars: 'hvězdiček',
-    settings: 'Nastavení',
-    show24h: 'Zobrazit 24h čísla',
-    showMinNums: 'Zobrazit minutová čísla',
-    modeLearn: '📖 Výuka',
-    modePractice: '🎯 Procvičování',
-    analogClock: 'Analogové hodiny',
-    digitalClock: 'Digitální hodiny',
-    clickArrows: 'Klikni na šipky nebo přetahuj ručičky',
-    newQuestion: 'Nová otázka ▶',
-    subDigToAna: 'Digitální → Analogové',
-    subAnaTodig: 'Analogové → Digitální',
-    subMix: 'Mix',
-    diffWhole: 'Celé hodiny',
-    diffHalf: 'Půlhodiny',
-    diffQuarter: 'Čtvrthodiny',
-    diffFive: 'Po 5 minutách',
-    diffExact: 'Přesný čas',
-    promptSetAnalog: 'Nastav ručičky na čas:',
-    promptSetDigital: 'Zapiš čas z hodin:',
-    checkBtn: '✔ Zkontrolovat',
-    correct: '🎉 Výborně! Správně!',
-    wrong: '💡 Zkus to znovu! Správný čas byl',
-    timeLabel: (h, m) => {
-      const h12 = h % 12 || 12;
-      if (m === 0) return `${h12} hodin přesně`;
-      if (m === 30) return `půl ${h12 + 1 > 12 ? 1 : h12 + 1}`;
-      if (m === 15) return `čtvrt na ${h12 + 1 > 12 ? 1 : h12 + 1}`;
-      if (m === 45) return `tři čtvrtě na ${h12 + 1 > 12 ? 1 : h12 + 1}`;
-      return `${h12}:${String(m).padStart(2,'0')}`;
-    },
+/* ============================================================
+   i18n
+============================================================ */
+const TX={
+  cs:{
+    appTitle:'Učíme se čas', stars:'hvězdiček', settings:'Nastavení',
+    show24h:'Zobrazit 24h čísla', showMin:'Zobrazit minutová čísla',
+    mLearn:'📖 Výuka', mPrac:'🎯 Procvičování',
+    aClk:'Analogové hodiny', dClk:'Digitální hodiny',
+    newQ:'Nová otázka ▶',
+    subDA:'Digitální → Analogové', subAD:'Analogové → Digitální', subMix:'Mix',
+    d1:'Celé hodiny', d2:'Půlhodiny', d3:'Čtvrthodiny', d4:'Po 5 minutách', d5:'Přesný čas',
+    setA:'Nastav ručičky na:', setD:'Zapiš čas ze hodin:',
+    chk:'✔ Zkontrolovat', ok:'🎉 Výborně! Správně!', err:'💡 Správný čas byl',
+    hod:'hod', min:'min', hLbl:'Hodiny', mLbl:'Minuty', tabLbl:'min →',
+    tl:(h,m)=>{const x=h%12||12,n=(x%12)+1;if(!m)return`${x} hodin přesně`;if(m===30)return`půl ${n}`;if(m===15)return`čtvrt na ${n}`;if(m===45)return`tři čtvrtě na ${n}`;return`${x}:${String(m).padStart(2,'0')}`;}
   },
-  en: {
-    appTitle: 'Learn the Clock',
-    stars: 'stars',
-    settings: 'Settings',
-    show24h: 'Show 24h numbers',
-    showMinNums: 'Show minute numbers',
-    modeLearn: '📖 Learning',
-    modePractice: '🎯 Practice',
-    analogClock: 'Analog Clock',
-    digitalClock: 'Digital Clock',
-    clickArrows: 'Click arrows or drag the hands',
-    newQuestion: 'New Question ▶',
-    subDigToAna: 'Digital → Analog',
-    subAnaTodig: 'Analog → Digital',
-    subMix: 'Mix',
-    diffWhole: 'Whole hours',
-    diffHalf: 'Half hours',
-    diffQuarter: 'Quarter hours',
-    diffFive: 'Every 5 minutes',
-    diffExact: 'Exact minutes',
-    promptSetAnalog: 'Set the hands to:',
-    promptSetDigital: 'Write the time shown:',
-    checkBtn: '✔ Check',
-    correct: '🎉 Excellent! Correct!',
-    wrong: '💡 Try again! Correct time was',
-    timeLabel: (h, m) => {
-      const h12 = h % 12 || 12;
-      const ampm = h < 12 ? 'AM' : 'PM';
-      if (m === 0) return `${h12}:00 o'clock ${ampm}`;
-      if (m === 30) return `Half past ${h12}`;
-      if (m === 15) return `Quarter past ${h12}`;
-      if (m === 45) return `Quarter to ${h12 + 1 > 12 ? 1 : h12 + 1}`;
-      return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
-    },
+  en:{
+    appTitle:'Learn the Clock', stars:'stars', settings:'Settings',
+    show24h:'Show 24h numbers', showMin:'Show minute numbers',
+    mLearn:'📖 Learning', mPrac:'🎯 Practice',
+    aClk:'Analog Clock', dClk:'Digital Clock',
+    newQ:'New Question ▶',
+    subDA:'Digital → Analog', subAD:'Analog → Digital', subMix:'Mix',
+    d1:'Whole hours', d2:'Half hours', d3:'Quarters', d4:'5-min steps', d5:'Exact minutes',
+    setA:'Set the hands to:', setD:'Write the time shown:',
+    chk:'✔ Check', ok:'🎉 Excellent! Correct!', err:'💡 Correct time was',
+    hod:'hr', min:'min', hLbl:'Hours', mLbl:'Minutes', tabLbl:'min →',
+    tl:(h,m)=>{const x=h%12||12,ap=h<12?'AM':'PM',n=(x%12)+1;if(!m)return`${x}:00 ${ap}`;if(m===30)return`Half past ${x}`;if(m===15)return`Quarter past ${x}`;if(m===45)return`Quarter to ${n}`;return`${x}:${String(m).padStart(2,'0')} ${ap}`;}
   }
 };
-const t = key => (i18n[state.lang][key] || key);
+const t=k=>TX[S.lang][k]||k;
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-const CX = 160, CY = 160, R = 148;
+/* ============================================================
+   SVG CLOCK
+============================================================ */
+const NS='http://www.w3.org/2000/svg', CX=160,CY=160,R=148;
+const mk=(tag,a)=>{const e=document.createElementNS(NS,tag);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);return e;};
+const ang=(h,m)=>({ha:((h%12)+m/60)*30,ma:m*6});
 
-function makeSVGElem(tag, attrs) {
-  const el = document.createElementNS(SVG_NS, tag);
-  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-  return el;
-}
-
-function timeToAngle(h, m) {
-  return { hourAngle: ((h % 12) + m / 60) * 30, minuteAngle: m * 6 };
-}
-
-function buildClockFace(svgEl) {
-  svgEl.innerHTML = '';
-  // Fixní viewBox zajišťuje, že interní logika 320x320 se nemění, ať už je SVG jakkoli velké na obrazovce
-  svgEl.setAttribute('viewBox', '0 0 320 320');
-
-  const defs = makeSVGElem('defs', {});
-  const filter = makeSVGElem('filter', { id: 'dropshadow', x: '-10%', y: '-10%', width: '120%', height: '120%' });
-  const feDropShadow = makeSVGElem('feDropShadow', { dx: '0', dy: '3', stdDeviation: '6', 'flood-color': 'rgba(74,100,180,0.18)' });
-  filter.appendChild(feDropShadow);
-  defs.appendChild(filter);
-  svgEl.appendChild(defs);
-
-  svgEl.appendChild(makeSVGElem('circle', { cx: CX, cy: CY, r: R, fill: '#fff', stroke: '#dde4f0', 'stroke-width': '3', filter: 'url(#dropshadow)' }));
-
-  for (let i = 0; i < 60; i++) {
-    const angle = (i * 6 - 90) * Math.PI / 180;
-    const isHour = i % 5 === 0;
-    const outer = R - 4;
-    const inner = isHour ? outer - 16 : outer - 8;
-    svgEl.appendChild(makeSVGElem('line', {
-      x1: CX + Math.cos(angle) * inner, y1: CY + Math.sin(angle) * inner,
-      x2: CX + Math.cos(angle) * outer, y2: CY + Math.sin(angle) * outer,
-      stroke: isHour ? '#90a0c0' : '#c8d0e0',
-      'stroke-width': isHour ? '2.5' : '1',
-      'stroke-linecap': 'round'
-    }));
+function buildFace(svg){
+  svg.innerHTML='';svg.setAttribute('viewBox','0 0 320 320');
+  const df=mk('defs',{}),fi=mk('filter',{id:'ds',x:'-10%',y:'-10%',width:'120%',height:'120%'});
+  fi.appendChild(mk('feDropShadow',{dx:'0',dy:'3',stdDeviation:'7','flood-color':'rgba(74,100,180,.16)'}));
+  df.appendChild(fi);svg.appendChild(df);
+  svg.appendChild(mk('circle',{cx:CX,cy:CY,r:R,fill:'#fff',stroke:'#dde4f0','stroke-width':'3',filter:'url(#ds)'}));
+  for(let i=0;i<60;i++){
+    const a=(i*6-90)*Math.PI/180,ih=i%5===0,o=R-4,n=ih?o-16:o-8;
+    svg.appendChild(mk('line',{x1:CX+Math.cos(a)*n,y1:CY+Math.sin(a)*n,x2:CX+Math.cos(a)*o,y2:CY+Math.sin(a)*o,stroke:ih?'#90a0c0':'#c8d0e0','stroke-width':ih?'2.5':'1','stroke-linecap':'round'}));
   }
-
-  if (state.showMinNums) {
-    for (let i = 0; i < 12; i++) {
-      const m = i * 5;
-      const angle = (i * 30 - 90) * Math.PI / 180;
-      const nr = R - 28;
-      const el = makeSVGElem('text', {
-        x: CX + Math.cos(angle) * nr, y: CY + Math.sin(angle) * nr,
-        'text-anchor': 'middle', 'dominant-baseline': 'central',
-        'font-family': 'Nunito, sans-serif', 'font-size': '11', 'font-weight': '700',
-        fill: '#4a90d9', opacity: '0.75', 'data-min-num': '1'
-      });
-      el.textContent = String(m).padStart(2, '0');
-      svgEl.appendChild(el);
+  if(S.sMin){
+    for(let i=0;i<12;i++){
+      const a=(i*30-90)*Math.PI/180,nr=R-28;
+      const e=mk('text',{x:CX+Math.cos(a)*nr,y:CY+Math.sin(a)*nr,'text-anchor':'middle','dominant-baseline':'central','font-family':'Nunito,sans-serif','font-size':'11','font-weight':'700',fill:'#4a90d9',opacity:'0.75'});
+      e.textContent=String(i*5).padStart(2,'0');svg.appendChild(e);
     }
   }
-
-  for (let i = 1; i <= 12; i++) {
-    const angle = (i * 30 - 90) * Math.PI / 180;
-    const nr = R - 52;
-    if (state.show24h) {
-      const h24 = i + 12 === 24 ? 24 : i + 12;
-      const nr2 = nr - 22;
-      const el24 = makeSVGElem('text', {
-        x: CX + Math.cos(angle) * nr2, y: CY + Math.sin(angle) * nr2,
-        'text-anchor': 'middle', 'dominant-baseline': 'central',
-        'font-family': 'Nunito, sans-serif', 'font-size': '10.5', 'font-weight': '600',
-        fill: '#e05c6a', opacity: '0.65', 'data-24h-num': '1'
-      });
-      el24.textContent = h24;
-      svgEl.appendChild(el24);
+  for(let i=1;i<=12;i++){
+    const a=(i*30-90)*Math.PI/180,nr=R-52;
+    if(S.s24){
+      const h24=i+12===24?24:i+12,nr2=nr-22;
+      const e=mk('text',{x:CX+Math.cos(a)*nr2,y:CY+Math.sin(a)*nr2,'text-anchor':'middle','dominant-baseline':'central','font-family':'Nunito,sans-serif','font-size':'10.5','font-weight':'600',fill:'#e05c6a',opacity:'0.62'});
+      e.textContent=h24;svg.appendChild(e);
     }
-    const elH = makeSVGElem('text', {
-      x: CX + Math.cos(angle) * nr, y: CY + Math.sin(angle) * nr,
-      'text-anchor': 'middle', 'dominant-baseline': 'central',
-      'font-family': 'Baloo 2, cursive', 'font-size': '22', 'font-weight': '800',
-      fill: '#2d3a52'
-    });
-    elH.textContent = i;
-    svgEl.appendChild(elH);
+    const e=mk('text',{x:CX+Math.cos(a)*nr,y:CY+Math.sin(a)*nr,'text-anchor':'middle','dominant-baseline':'central','font-family':'Baloo 2,cursive','font-size':'22','font-weight':'800',fill:'#2d3a52'});
+    e.textContent=i;svg.appendChild(e);
   }
-  svgEl.appendChild(makeSVGElem('circle', { cx: CX, cy: CY, r: '7', fill: '#2d3a52' }));
+  svg.appendChild(mk('circle',{cx:CX,cy:CY,r:'7',fill:'#2d3a52'}));
 }
 
-function drawHands(svgEl, h, m) {
-  svgEl.querySelectorAll('.clock-hand, .hand-cap, .clock-handle, .hit-area').forEach(e => e.remove());
-
-  const { hourAngle, minuteAngle } = timeToAngle(h, m);
-
-  function handCoords(angleDeg, length) {
-    const rad = (angleDeg - 90) * Math.PI / 180;
-    return { x: CX + Math.cos(rad) * length, y: CY + Math.sin(rad) * length };
-  }
-
-  const hEnd = handCoords(hourAngle, 80);
-  const mEnd = handCoords(minuteAngle, 112);
-
-  const hourHand = makeSVGElem('line', {
-    x1: CX, y1: CY, x2: hEnd.x, y2: hEnd.y,
-    stroke: '#e05c6a', 'stroke-width': '8', 'stroke-linecap': 'round', class: 'clock-hand hour-handle'
-  });
-  const minuteHand = makeSVGElem('line', {
-    x1: CX, y1: CY, x2: mEnd.x, y2: mEnd.y,
-    stroke: '#4a90d9', 'stroke-width': '5', 'stroke-linecap': 'round', class: 'clock-hand min-handle'
-  });
-
-  const hKnob = makeSVGElem('circle', {
-    cx: hEnd.x, cy: hEnd.y, r: '12',
-    fill: '#e05c6a', class: 'clock-handle hour-handle', style: 'cursor: grab;'
-  });
-  const mKnob = makeSVGElem('circle', {
-    cx: mEnd.x, cy: mEnd.y, r: '12',
-    fill: '#4a90d9', class: 'clock-handle min-handle', style: 'cursor: grab;'
-  });
-
-  const hourHit = makeSVGElem('line', {
-    x1: CX, y1: CY, x2: hEnd.x, y2: hEnd.y,
-    stroke: 'transparent', 'stroke-width': '36', 'stroke-linecap': 'round', class: 'hit-area hour-handle', style: 'cursor: grab;'
-  });
-  const minHit = makeSVGElem('line', {
-    x1: CX, y1: CY, x2: mEnd.x, y2: mEnd.y,
-    stroke: 'transparent', 'stroke-width': '36', 'stroke-linecap': 'round', class: 'hit-area min-handle', style: 'cursor: grab;'
-  });
-
-  svgEl.appendChild(hourHand);
-  svgEl.appendChild(minuteHand);
-  svgEl.appendChild(hKnob);
-  svgEl.appendChild(mKnob);
-
-  svgEl.appendChild(makeSVGElem('circle', { cx: CX, cy: CY, r: '7', fill: '#2d3a52', class: 'hand-cap' }));
-  svgEl.appendChild(makeSVGElem('circle', { cx: CX, cy: CY, r: '3.5', fill: '#fff', class: 'hand-cap' }));
-
-  svgEl.appendChild(hourHit);
-  svgEl.appendChild(minHit);
+function drawHands(svg,h,m){
+  svg.querySelectorAll('.ch,.cc').forEach(e=>e.remove());
+  const{ha,ma}=ang(h,m);
+  const pt=(a,l)=>{const r=(a-90)*Math.PI/180;return{x:CX+Math.cos(r)*l,y:CY+Math.sin(r)*l};};
+  const he=pt(ha,80),me=pt(ma,112);
+  // Wide transparent hit zones FIRST (lower z-order within SVG)
+  const hHit=mk('line',{x1:CX,y1:CY,x2:he.x,y2:he.y,stroke:'transparent','stroke-width':'36','stroke-linecap':'round',class:'ch hit-h',style:'cursor:grab'});
+  const mHit=mk('line',{x1:CX,y1:CY,x2:me.x,y2:me.y,stroke:'transparent','stroke-width':'36','stroke-linecap':'round',class:'ch hit-m',style:'cursor:grab'});
+  svg.appendChild(hHit);svg.appendChild(mHit);
+  // Visible hands on top (pointer-events:none so hit zones stay active)
+  svg.appendChild(mk('line',{x1:CX,y1:CY,x2:he.x,y2:he.y,stroke:'#e05c6a','stroke-width':'8','stroke-linecap':'round',class:'ch hour-hand',style:'pointer-events:none'}));
+  svg.appendChild(mk('line',{x1:CX,y1:CY,x2:me.x,y2:me.y,stroke:'#4a90d9','stroke-width':'5','stroke-linecap':'round',class:'ch min-hand',style:'pointer-events:none'}));
+  svg.appendChild(mk('circle',{cx:CX,cy:CY,r:'7',fill:'#2d3a52',class:'cc',style:'pointer-events:none'}));
+  svg.appendChild(mk('circle',{cx:CX,cy:CY,r:'3.5',fill:'#fff',class:'cc',style:'pointer-events:none'}));
 }
 
-function renderClock(svgEl, h, m) {
-  buildClockFace(svgEl);
-  drawHands(svgEl, h, m);
+function renderClock(svg,h,m){buildFace(svg);drawHands(svg,h,m);}
+
+/* ============================================================
+   DRAG  —  wide transparent hit areas + fallback nearest-hand
+============================================================ */
+function a2d(dx,dy){let a=Math.atan2(dy,dx)*180/Math.PI+90;if(a<0)a+=360;return a;}
+
+function setupDrag(svg,cs,onUp){
+  let drag=null;
+  function svgPt(e){
+    const r=svg.getBoundingClientRect();
+    const cx=e.touches?e.touches[0].clientX:e.clientX;
+    const cy=e.touches?e.touches[0].clientY:e.clientY;
+    return{dx:(cx-r.left)*(320/r.width)-CX,dy:(cy-r.top)*(320/r.height)-CY};
+  }
+  function nearHand(dx,dy){
+    const a=a2d(dx,dy),{ha,ma}=ang(cs.h,cs.m);
+    return Math.abs(((a-ha+540)%360)-180)<=Math.abs(((a-ma+540)%360)-180)?'hour':'min';
+  }
+  function applyAngle(dx,dy){
+    const a=a2d(dx,dy);
+    if(drag==='hour'){
+      const h12=Math.round(((a/30)%12+12)%12)%12;
+      cs.h=cs.h>=12?h12+12:h12;
+      if(cs.h>=24)cs.h-=12;if(cs.h<0)cs.h+=12;
+    } else {
+      cs.m=((Math.round(a/6)%60)+60)%60;
+    }
+    renderClock(svg,cs.h,cs.m);onUp&&onUp();
+  }
+  svg.addEventListener('mousedown',e=>{
+    const{dx,dy}=svgPt(e);
+    const tgt=e.target;
+    drag=tgt.classList.contains('hit-h')?'hour':tgt.classList.contains('hit-m')?'min':nearHand(dx,dy);
+    e.preventDefault();applyAngle(dx,dy);
+  });
+  svg.addEventListener('touchstart',e=>{
+    const{dx,dy}=svgPt(e);
+    const tgt=e.target;
+    drag=tgt.classList.contains('hit-h')?'hour':tgt.classList.contains('hit-m')?'min':nearHand(dx,dy);
+    applyAngle(dx,dy);
+  },{passive:true});
+  window.addEventListener('mousemove',e=>{if(drag){const{dx,dy}=svgPt(e);applyAngle(dx,dy);}});
+  window.addEventListener('touchmove',e=>{if(drag){const{dx,dy}=svgPt(e);applyAngle(dx,dy);}},{passive:true});
+  window.addEventListener('mouseup',()=>drag=null);
+  window.addEventListener('touchend',()=>drag=null);
 }
 
 /* ============================================================
-   DRAG-TO-SET (Bulletproof verze)
-   ============================================================ */
-function angleToDeg(dx, dy) {
-  let angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
-  if (angle < 0) angle += 360;
-  return angle;
+   LEARN MODE
+============================================================ */
+const LS={h:10,m:10};
+
+function updLearn(){
+  const svg=document.getElementById('asvg');
+  renderClock(svg,LS.h,LS.m);
+  document.getElementById('dh').textContent=String(LS.h).padStart(2,'0');
+  document.getElementById('dm').textContent=String(LS.m).padStart(2,'0');
+  document.getElementById('time-txt').textContent=TX[S.lang].tl(LS.h,LS.m);
 }
-
-function setupDrag(svgEl, onTimeChange) {
-  let dragging = null;
-
-  function getAngle(e) {
-    const rect = svgEl.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    // Ochrana pro případ dynamické změny velikosti SVG
-    const scaleX = 320 / rect.width;
-    const scaleY = 320 / rect.height;
-    const dx = (clientX - rect.left) * scaleX - CX;
-    const dy = (clientY - rect.top) * scaleY - CY;
-    return angleToDeg(dx, dy);
-  }
-
-  function start(e) {
-    // KLÍČ K BLOKOVÁNÍ SCROLLOVÁNÍ NA MOBILU
-    if (e.cancelable) e.preventDefault();
-
-    const cls = (e.target && e.target.getAttribute('class')) || '';
-    if (cls.includes('hour-handle')) dragging = 'hour';
-    else if (cls.includes('min-handle')) dragging = 'minute';
-    else {
-      const angle = getAngle(e);
-      const { hourAngle, minuteAngle } = timeToAngle(state.hours, state.minutes);
-      const dHour = Math.abs(((angle - hourAngle + 540) % 360) - 180);
-      const dMin  = Math.abs(((angle - minuteAngle + 540) % 360) - 180);
-      dragging = dHour < dMin ? 'hour' : 'minute';
-    }
-    update(getAngle(e));
-  }
-
-  function move(e) { 
-    if (dragging) {
-      if (e.cancelable) e.preventDefault();
-      update(getAngle(e)); 
-    }
-  }
-  function stop() { dragging = null; }
-
-  // Zde nesmí být { passive: true }, abychom mohli využívat preventDefault()
-  svgEl.addEventListener('mousedown', start);
-  svgEl.addEventListener('touchstart', start, { passive: false });
-  window.addEventListener('mousemove', move);
-  window.addEventListener('touchmove', move, { passive: false });
-  window.addEventListener('mouseup', stop);
-  window.addEventListener('touchend', stop);
-
-  function update(angle) {
-    if (dragging === 'hour') {
-      let h = Math.round(angle / 30) % 12;
-      state.hours = (state.hours >= 12 ? h + 12 : h);
-      if (state.hours >= 24) state.hours -= 12;
-      if (state.hours < 0) state.hours += 12;
-    } else if (dragging === 'minute') {
-      state.minutes = Math.round(angle / 6) % 60;
-      if (state.minutes < 0) state.minutes += 60;
-    }
-    onTimeChange();
-  }
-}
-
-function updateLearnUI() {
-  const svgEl = document.getElementById('analog-svg');
-  renderClock(svgEl, state.hours, state.minutes);
-  document.getElementById('dig-hour').textContent = String(state.hours).padStart(2, '0');
-  document.getElementById('dig-min').textContent  = String(state.minutes).padStart(2, '0');
-  document.getElementById('learn-time-text').textContent = i18n[state.lang].timeLabel(state.hours, state.minutes);
-}
-
-function changeDigitalTime(part, delta) {
-  if (part === 'hour') {
-    state.hours = (state.hours + delta + 24) % 24;
-  } else {
-    state.minutes = (state.minutes + delta + 60) % 60;
-  }
-  updateLearnUI();
+function adjL(part,d){
+  if(part==='h')LS.h=(LS.h+d+24)%24;
+  else          LS.m=(LS.m+d+60)%60;
+  updLearn();
 }
 
 /* ============================================================
-   PRACTICE MODE
-   ============================================================ */
-let practiceAnalogSVG = null;
-const practiceClockState = { h: 12, m: 0 };
+   PRACTICE
+============================================================ */
+let pSVG=null;
+const PC={h:12,m:0};
 
-function generateTarget() {
-  const step = parseInt(document.getElementById('diff-select').value);
-  if (step === 60) {
-    state.practiceTarget.m = 0;
-  } else {
-    const slots = Math.floor(60 / step);
-    state.practiceTarget.m = Math.floor(Math.random() * slots) * step;
-  }
-  state.practiceTarget.h = Math.floor(Math.random() * 12) + 1;
-  practiceClockState.h = 12;
-  practiceClockState.m = 0;
+function genTarget(){
+  const step=parseInt(document.getElementById('dif').value);
+  S.pTarget.m=step===60?0:Math.floor(Math.random()*(60/step))*step;
+  S.pTarget.h=Math.floor(Math.random()*12)+1;
+  PC.h=12;PC.m=0;
 }
 
-function setupPracticeDrag(svgEl) {
-  let dragging = null;
+function newQ(){
+  S.answered=false;genTarget();
+  const sub=document.getElementById('sub').value;
+  S.pMode=sub==='mix'?(Math.random()<.5?'d2a':'a2d'):sub;
+  document.getElementById('prow').innerHTML='';
+  const fb=document.getElementById('pfb');fb.className='fb';fb.textContent='';
+  const{h,m}=S.pTarget,row=document.getElementById('prow');
 
-  function getAngle(e) {
-    const rect = svgEl.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const scaleX = 320 / rect.width;
-    const scaleY = 320 / rect.height;
-    const dx = (clientX - rect.left) * scaleX - CX;
-    const dy = (clientY - rect.top) * scaleY - CY;
-    return angleToDeg(dx, dy);
-  }
-
-  function start(e) {
-    if (e.cancelable) e.preventDefault();
-
-    const cls = (e.target && e.target.getAttribute('class')) || '';
-    if (cls.includes('hour-handle')) dragging = 'hour';
-    else if (cls.includes('min-handle')) dragging = 'minute';
-    else {
-      const angle = getAngle(e);
-      const { hourAngle, minuteAngle } = timeToAngle(practiceClockState.h, practiceClockState.m);
-      const dHour = Math.abs(((angle - hourAngle + 540) % 360) - 180);
-      const dMin  = Math.abs(((angle - minuteAngle + 540) % 360) - 180);
-      dragging = dHour < dMin ? 'hour' : 'minute';
-    }
-    update(getAngle(e));
-  }
-
-  function move(e) { 
-    if (dragging) {
-      if (e.cancelable) e.preventDefault();
-      update(getAngle(e)); 
-    }
-  }
-  function stop() { dragging = null; }
-
-  svgEl.addEventListener('mousedown', start);
-  svgEl.addEventListener('touchstart', start, { passive: false });
-  window.addEventListener('mousemove', move);
-  window.addEventListener('touchmove', move, { passive: false });
-  window.addEventListener('mouseup', stop);
-  window.addEventListener('touchend', stop);
-
-  function update(angle) {
-    if (dragging === 'hour') {
-      let h = Math.round(angle / 30) % 12;
-      practiceClockState.h = practiceClockState.h >= 12 ? h + 12 : h;
-      if (practiceClockState.h >= 24) practiceClockState.h -= 12;
-      if (practiceClockState.h < 0) practiceClockState.h += 12;
-    } else if (dragging === 'minute') {
-      practiceClockState.m = Math.round(angle / 6) % 60;
-      if (practiceClockState.m < 0) practiceClockState.m += 60;
-    }
-    renderClock(svgEl, practiceClockState.h, practiceClockState.m);
-  }
-}
-
-function startNewQuestion() {
-  state.answered = false;
-  generateTarget();
-
-  const sub = document.getElementById('submode-select').value;
-  state.practiceCurrentSubmode = sub === 'mix'
-    ? (Math.random() < .5 ? 'digital2analog' : 'analog2digital')
-    : sub;
-
-  const layout = document.getElementById('practice-layout');
-  layout.innerHTML = '';
-  document.getElementById('feedback-msg').className = 'feedback-msg';
-  document.getElementById('feedback-msg').textContent = '';
-
-  const { h, m } = state.practiceTarget;
-  const lang = state.lang;
-
-  if (state.practiceCurrentSubmode === 'digital2analog') {
-    layout.innerHTML = `
-      <div style="flex:1;min-width:240px;display:flex;flex-direction:column;align-items:center;gap:12px;">
-        <div class="practice-prompt">${t('promptSetAnalog')}<br><span class="prompt-time">${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}</span></div>
-        <div class="time-text-display">${i18n[lang].timeLabel(h, m)}</div>
+  if(S.pMode==='d2a'){
+    row.innerHTML=`
+      <div class="p-col">
+        <div class="prac-prompt">${t('setA')}<span class="ptime">${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}</span></div>
+        <div class="time-lbl" style="max-width:260px">${TX[S.lang].tl(h,m)}</div>
       </div>
-      <div class="clock-wrapper">
-        <div class="clock-label">${t('analogClock')}</div>
-        <svg id="practice-analog-svg" viewBox="0 0 320 320"></svg>
-        <button class="check-btn" onclick="checkAnswer()">${t('checkBtn')}</button>
-      </div>`;
-    practiceAnalogSVG = document.getElementById('practice-analog-svg');
-    renderClock(practiceAnalogSVG, practiceClockState.h, practiceClockState.m);
-    setupPracticeDrag(practiceAnalogSVG);
-
-  } else {
-    layout.innerHTML = `
-      <div class="clock-wrapper">
-        <div class="clock-label">${t('analogClock')}</div>
-        <svg id="practice-analog-svg" viewBox="0 0 320 320"></svg>
-      </div>
-      <div style="flex:1;min-width:260px;display:flex;flex-direction:column;align-items:center;gap:14px;">
-        <div class="practice-prompt">${t('promptSetDigital')}</div>
-        <div class="dig-input-widget" id="dig-input-widget"></div>
-        <button class="check-btn" onclick="checkAnswer()">${t('checkBtn')}</button>
-      </div>`;
-    practiceAnalogSVG = document.getElementById('practice-analog-svg');
-    renderClock(practiceAnalogSVG, h, m);
-    buildDigInputWidget(document.getElementById('dig-input-widget'));
-  }
-}
-
-/* ============================================================
-   DIGITAL INPUT WIDGET  (spinner + numpad)
-   ============================================================ */
-const digWidget = { h: 0, m: 0, focus: 'hour' }; 
-
-function buildDigInputWidget(container) {
-  digWidget.h = 0; digWidget.m = 0; digWidget.focus = 'hour';
-
-  function render() {
-    const hStr = String(digWidget.h).padStart(2,'0');
-    const mStr = String(digWidget.m).padStart(2,'0');
-    container.innerHTML = `
-      <div class="spinner-row">
-        <div class="spinner-group">
-          <button class="spin-btn up hour-spin" onclick="digWidgetSpin('h',1)">▲</button>
-          <div class="spin-display hour-disp${digWidget.focus==='hour'?' active-inp':''}"
-               onclick="digWidget.focus='hour';buildDigInputWidget(document.getElementById('dig-input-widget'))"
-               style="cursor:pointer">${hStr}</div>
-          <button class="spin-btn down hour-spin" onclick="digWidgetSpin('h',-1)">▼</button>
+      <div class="p-col">
+        <div class="clk-lbl">${t('aClk')}</div>
+        <div class="svg-box"><svg id="psvg" viewBox="0 0 320 320"></svg></div>
+        <div class="hand-ctrl">
+          <button class="hc hh" onclick="adjP('h',-1)">◀ ${t('hod')}</button>
+          <button class="hc hh" onclick="adjP('h', 1)">${t('hod')} ▶</button>
+          <button class="hc hm" onclick="adjP('m',-5)">◀◀</button>
+          <button class="hc hm" onclick="adjP('m',-1)">◀ ${t('min')}</button>
+          <button class="hc hm" onclick="adjP('m', 1)">${t('min')} ▶</button>
+          <button class="hc hm" onclick="adjP('m', 5)">▶▶</button>
         </div>
-        <div class="spin-colon">:</div>
-        <div class="spinner-group">
-          <button class="spin-btn up" onclick="digWidgetSpin('m',1)">▲</button>
-          <div class="spin-display min-disp${digWidget.focus==='min'?' active-inp':''}"
-               onclick="digWidget.focus='min';buildDigInputWidget(document.getElementById('dig-input-widget'))"
-               style="cursor:pointer">${mStr}</div>
-          <button class="spin-btn down" onclick="digWidgetSpin('m',-1)">▼</button>
+        <button class="chk-btn" onclick="chkAns()">${t('chk')}</button>
+      </div>`;
+    pSVG=document.getElementById('psvg');
+    renderClock(pSVG,PC.h,PC.m);
+    setupDrag(pSVG,PC,()=>renderClock(pSVG,PC.h,PC.m));
+  } else {
+    row.innerHTML=`
+      <div class="p-col">
+        <div class="clk-lbl">${t('aClk')}</div>
+        <div class="svg-box"><svg id="psvg" viewBox="0 0 320 320"></svg></div>
+      </div>
+      <div class="p-col">
+        <div class="prac-prompt">${t('setD')}</div>
+        <div class="diw" id="diw"></div>
+        <button class="chk-btn" onclick="chkAns()">${t('chk')}</button>
+      </div>`;
+    pSVG=document.getElementById('psvg');
+    renderClock(pSVG,h,m);
+    buildDIW(document.getElementById('diw'));
+  }
+}
+
+function adjP(part,d){
+  if(part==='h')PC.h=(PC.h+d+24)%24;
+  else          PC.m=(PC.m+d+60)%60;
+  if(pSVG)renderClock(pSVG,PC.h,PC.m);
+}
+
+/* ============================================================
+   DIGITAL INPUT WIDGET
+============================================================ */
+const DW={h:0,m:0,focus:'hour',_r:null};
+const NB={v:''};
+
+function buildDIW(c){
+  DW.h=0;DW.m=0;DW.focus='hour';NB.v='';
+  function r(){
+    const hs=String(DW.h).padStart(2,'0'),ms=String(DW.m).padStart(2,'0');
+    const ha=DW.focus==='hour'?' act':'',ma=DW.focus==='min'?' act':'';
+    c.innerHTML=`
+      <div class="sp-col">
+        <div class="srow">
+          <div class="sgrp">
+            <button class="sbtn up hs" onclick="dws('h',1)">▲</button>
+            <div class="sdsp hd${ha}" onclick="DW.focus='hour';DW._r()">${hs}</div>
+            <button class="sbtn dn hs" onclick="dws('h',-1)">▼</button>
+          </div>
+          <div class="scol">:</div>
+          <div class="sgrp">
+            <button class="sbtn up" onclick="dws('m',1)">▲</button>
+            <div class="sdsp md${ma}" onclick="DW.focus='min';DW._r()">${ms}</div>
+            <button class="sbtn dn" onclick="dws('m',-1)">▼</button>
+          </div>
+        </div>
+        <div class="sp-hint">
+          <span style="color:var(--H)">■ ${t('hLbl')}</span>
+          <span style="color:var(--M)">■ ${t('mLbl')}</span>
         </div>
       </div>
-      <div class="numpad-hint">
-        <span style="color:var(--hour-color)">■ ${digWidget.focus==='hour'? (state.lang==='cs'?'Hodiny':'Hours') : (state.lang==='cs'?'Hodiny':'Hours')}</span>
-        <span style="color:var(--minute-color)">■ ${state.lang==='cs'?'Minuty':'Minutes'}</span>
-      </div>
-      <div class="numpad" id="numpad">
-        ${[1,2,3,4,5,6,7,8,9].map(n=>`<div class="nk" onclick="digWidgetKey(${n})">${n}</div>`).join('')}
-        <div class="nk nk-del" onclick="digWidgetKey('del')">⌫</div>
-        <div class="nk" onclick="digWidgetKey(0)">0</div>
-        <div class="nk nk-ok" onclick="digWidgetKey('tab')">${state.lang==='cs'?'min →':'min →'}</div>
+      <div class="np-col">
+        <div class="np-hint">
+          <span style="color:var(--H)">■ ${t('hLbl')}</span>
+          <span style="color:var(--M)">■ ${t('mLbl')}</span>
+        </div>
+        <div class="npg">
+          ${[1,2,3,4,5,6,7,8,9].map(n=>`<div class="nk" onclick="dwk(${n})">${n}</div>`).join('')}
+          <div class="nk del" onclick="dwk('del')">⌫</div>
+          <div class="nk" onclick="dwk(0)">0</div>
+          <div class="nk ok" onclick="dwk('tab')">${t('tabLbl')}</div>
+        </div>
       </div>`;
   }
-
-  render();
-  digWidget._render = render;
+  r();DW._r=r;
 }
 
-function digWidgetSpin(part, dir) {
-  if (part === 'h') {
-    digWidget.h = (digWidget.h + dir + 24) % 24;
-    digWidget.focus = 'hour';
-  } else {
-    digWidget.m = (digWidget.m + dir + 60) % 60;
-    digWidget.focus = 'min';
-  }
-  digWidget._render && digWidget._render();
+function dws(p,d){
+  if(p==='h'){DW.h=(DW.h+d+24)%24;DW.focus='hour';}
+  else       {DW.m=(DW.m+d+60)%60;DW.focus='min';}
+  DW._r&&DW._r();
+}
+function dwk(k){
+  if(!document.getElementById('diw'))return;
+  if(k==='del'){NB.v=NB.v.slice(0,-1);DW[DW.focus==='hour'?'h':'m']=parseInt(NB.v||'0');DW._r&&DW._r();return;}
+  if(k==='tab'){NB.v='';DW.focus=DW.focus==='hour'?'min':'hour';DW._r&&DW._r();return;}
+  NB.v+=String(k);
+  if(DW.focus==='hour'){DW.h=Math.min(parseInt(NB.v),23);if(NB.v.length>=2||parseInt(NB.v[0])>2){NB.v='';DW.focus='min';}}
+  else{DW.m=Math.min(parseInt(NB.v),59);if(NB.v.length>=2||parseInt(NB.v[0])>5)NB.v='';}
+  DW._r&&DW._r();
 }
 
-const _numBuf = { val: '' };
-function digWidgetKey(key) {
-  const container = document.getElementById('dig-input-widget');
-  if (!container) return;
-
-  if (key === 'del') {
-    _numBuf.val = _numBuf.val.slice(0,-1);
-    if (digWidget.focus === 'hour') digWidget.h = parseInt(_numBuf.val||'0');
-    else                            digWidget.m = parseInt(_numBuf.val||'0');
-    digWidget._render && digWidget._render();
-    return;
-  }
-  if (key === 'tab') {
-    _numBuf.val = '';
-    digWidget.focus = digWidget.focus === 'hour' ? 'min' : 'hour';
-    digWidget._render && digWidget._render();
-    return;
-  }
-
-  _numBuf.val += String(key);
-  if (digWidget.focus === 'hour') {
-    const v = parseInt(_numBuf.val);
-    digWidget.h = Math.min(v, 23);
-    if (_numBuf.val.length >= 2 || parseInt(_numBuf.val[0]) > 2) {
-      _numBuf.val = '';
-      digWidget.focus = 'min';
-    }
+/* ============================================================
+   CHECK
+============================================================ */
+function chkAns(){
+  if(S.answered)return;
+  const{h,m}=S.pTarget;
+  const ok=S.pMode==='d2a'
+    ?(PC.h%12===h%12&&PC.m===m)
+    :((DW.h%12===h%12||DW.h===h)&&DW.m===m);
+  const fb=document.getElementById('pfb');
+  if(ok){
+    S.answered=true;S.stars++;saveProg();updStars();
+    fb.className='fb ok';fb.textContent=t('ok');doConfetti();
   } else {
-    const v = parseInt(_numBuf.val);
-    digWidget.m = Math.min(v, 59);
-    if (_numBuf.val.length >= 2 || parseInt(_numBuf.val[0]) > 5) {
-      _numBuf.val = '';
-    }
-  }
-  digWidget._render && digWidget._render();
-}
-
-function checkAnswer() {
-  if (state.answered) return;
-  const { h, m } = state.practiceTarget;
-
-  let correct = false;
-  if (state.practiceCurrentSubmode === 'digital2analog') {
-    const ah = practiceClockState.h % 12;
-    const th = h % 12;
-    const am = practiceClockState.m;
-    correct = (ah === th && am === m);
-  } else {
-    const ih = digWidget.h;
-    const im = digWidget.m;
-    correct = ((ih % 12 === h % 12 || ih === h) && im === m);
-  }
-
-  const fb = document.getElementById('feedback-msg');
-  if (correct) {
-    state.answered = true;
-    state.stars++;
-    saveProgress();
-    updateStarDisplay();
-    fb.className = 'feedback-msg correct';
-    fb.textContent = t('correct');
-    launchConfetti();
-  } else {
-    fb.className = 'feedback-msg wrong';
-    fb.textContent = `${t('wrong')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-    if (practiceAnalogSVG) {
-      const hHand = practiceAnalogSVG.querySelector('.hour-handle');
-      const mHand = practiceAnalogSVG.querySelector('.min-handle');
-      if (hHand) { hHand.classList.add('blink-hour');   setTimeout(() => hHand.classList.remove('blink-hour'),   3000); }
-      if (mHand) { mHand.classList.add('blink-minute'); setTimeout(() => mHand.classList.remove('blink-minute'), 3000); }
-      setTimeout(() => {
-        practiceClockState.h = h; practiceClockState.m = m;
-        renderClock(practiceAnalogSVG, h, m);
-      }, 1400);
+    fb.className='fb err';
+    fb.textContent=`${t('err')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    if(pSVG){
+      const hh=pSVG.querySelector('.hour-hand'),mh=pSVG.querySelector('.min-hand');
+      if(hh){hh.classList.add('bh');setTimeout(()=>hh.classList.remove('bh'),3200);}
+      if(mh){mh.classList.add('bm');setTimeout(()=>mh.classList.remove('bm'),3200);}
+      setTimeout(()=>{PC.h=h;PC.m=m;renderClock(pSVG,h,m);},1500);
     }
   }
 }
 
 /* ============================================================
    CONFETTI
-   ============================================================ */
-function launchConfetti() {
-  const canvas = document.getElementById('confetti-canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
-  const particles = Array.from({ length: 120 }, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * -canvas.height * .5,
-    vx: (Math.random() - .5) * 4,
-    vy: Math.random() * 4 + 2,
-    color: ['#e05c6a','#4a90d9','#ffb347','#5cb85c','#9b59b6','#1abc9c'][Math.floor(Math.random()*6)],
-    size: Math.random() * 10 + 6,
-    spin: Math.random() * 360,
-    spinSpeed: (Math.random() - .5) * 8,
-    shape: Math.random() < .5 ? 'rect' : 'circle'
-  }));
-
-  let frame;
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    let alive = false;
-    for (const p of particles) {
-      p.x += p.vx; p.y += p.vy; p.spin += p.spinSpeed; p.vy += .05;
-      if (p.y < canvas.height + 30) alive = true;
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.spin * Math.PI / 180);
-      ctx.fillStyle = p.color;
-      if (p.shape === 'rect') {
-        ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
-      } else {
-        ctx.beginPath();
-        ctx.arc(0, 0, p.size/2, 0, Math.PI*2);
-        ctx.fill();
-      }
-      ctx.restore();
-    }
-    if (alive) frame = requestAnimationFrame(draw);
-    else ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
-  cancelAnimationFrame(frame);
-  draw();
+============================================================ */
+function doConfetti(){
+  const cv=document.getElementById('cc'),ctx=cv.getContext('2d');
+  cv.width=innerWidth;cv.height=innerHeight;
+  const cols=['#e05c6a','#4a90d9','#ffb347','#5cb85c','#9b59b6','#1abc9c'];
+  const ps=Array.from({length:120},()=>({x:Math.random()*cv.width,y:Math.random()*-cv.height*.6,vx:(Math.random()-.5)*5,vy:Math.random()*5+2,c:cols[~~(Math.random()*6)],s:Math.random()*11+5,sp:Math.random()*360,ss:(Math.random()-.5)*9,rect:Math.random()<.5}));
+  let fr;(function draw(){ctx.clearRect(0,0,cv.width,cv.height);let al=false;for(const p of ps){p.x+=p.vx;p.y+=p.vy;p.sp+=p.ss;p.vy+=.06;if(p.y<cv.height+30)al=true;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.sp*Math.PI/180);ctx.fillStyle=p.c;if(p.rect)ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);else{ctx.beginPath();ctx.arc(0,0,p.s/2,0,Math.PI*2);ctx.fill();}ctx.restore();}if(al)fr=requestAnimationFrame(draw);else ctx.clearRect(0,0,cv.width,cv.height);})();
 }
 
 /* ============================================================
-   STARS, TABS, LANG, SETTINGS, INIT
-   ============================================================ */
-function updateStarDisplay() {
-  const el = document.getElementById('star-count');
-  el.textContent = state.stars;
-  el.classList.remove('star-pop');
-  void el.offsetWidth;
-  el.classList.add('star-pop');
+   UI / STORAGE / INIT
+============================================================ */
+function updStars(){
+  const e=document.getElementById('sc');
+  e.textContent=S.stars;e.classList.remove('pop');void e.offsetWidth;e.classList.add('pop');
 }
 
-function switchTab(tab) {
-  document.getElementById('mode-learn').classList.toggle('active', tab === 'learn');
-  document.getElementById('mode-practice').classList.toggle('active', tab === 'practice');
-  document.getElementById('tab-learn').classList.toggle('active', tab === 'learn');
-  document.getElementById('tab-practice').classList.toggle('active', tab === 'practice');
-  if (tab === 'practice') {
-    document.getElementById('practice-layout').innerHTML = '';
-    document.getElementById('feedback-msg').className = 'feedback-msg';
-    document.getElementById('feedback-msg').textContent = '';
+function switchTab(tab){
+  document.getElementById('ml').classList.toggle('on',tab==='learn');
+  document.getElementById('mp').classList.toggle('on',tab==='prac');
+  document.getElementById('tab-learn').classList.toggle('on',tab==='learn');
+  document.getElementById('tab-prac').classList.toggle('on',tab==='prac');
+  if(tab==='prac'){
+    document.getElementById('prow').innerHTML='';
+    const fb=document.getElementById('pfb');fb.className='fb';fb.textContent='';
   }
 }
 
-function applyLanguage() {
-  const lang = state.lang;
-  document.documentElement.lang = lang;
-  document.getElementById('lang-toggle').textContent = lang === 'cs' ? '🌐 EN' : '🌐 CZ';
-
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (i18n[lang][key]) el.textContent = i18n[lang][key];
-  });
-  document.querySelectorAll('[data-i18n-opt]').forEach(el => {
-    const key = el.getAttribute('data-i18n-opt');
-    if (i18n[lang][key]) el.textContent = i18n[lang][key];
-  });
-  updateLearnUI();
+function applyLang(){
+  const L=S.lang;
+  document.documentElement.lang=L;
+  document.getElementById('lang-btn').textContent=L==='cs'?'🌐 EN':'🌐 CZ';
+  document.querySelectorAll('[data-i18n]').forEach(e=>{const k=e.getAttribute('data-i18n');if(TX[L][k])e.textContent=TX[L][k];});
+  document.querySelectorAll('[data-i18n-opt]').forEach(e=>{const k=e.getAttribute('data-i18n-opt');if(TX[L][k])e.textContent=TX[L][k];});
+  updLearn();
 }
 
-document.getElementById('lang-toggle').addEventListener('click', () => {
-  state.lang = state.lang === 'cs' ? 'en' : 'cs';
-  applyLanguage();
-  saveProgress();
-});
+document.getElementById('lang-btn').addEventListener('click',()=>{S.lang=S.lang==='cs'?'en':'cs';applyLang();saveProg();});
+document.getElementById('set-btn').addEventListener('click',()=>document.getElementById('set-wrap').classList.toggle('open'));
+document.getElementById('t24').addEventListener('change',e=>{S.s24=e.target.checked;saveSett();updLearn();if(pSVG)renderClock(pSVG,S.pTarget.h,S.pTarget.m);});
+document.getElementById('tmin').addEventListener('change',e=>{S.sMin=e.target.checked;saveSett();updLearn();if(pSVG)renderClock(pSVG,S.pTarget.h,S.pTarget.m);});
 
-document.getElementById('settings-open-btn').addEventListener('click', () => {
-  document.getElementById('settings-panel').classList.toggle('open');
-});
-
-document.getElementById('toggle-24h').addEventListener('change', e => {
-  state.show24h = e.target.checked;
-  saveSettings();
-  updateLearnUI();
-  if (practiceAnalogSVG) renderClock(practiceAnalogSVG, state.practiceTarget.h, state.practiceTarget.m);
-});
-
-document.getElementById('toggle-minutes').addEventListener('change', e => {
-  state.showMinNums = e.target.checked;
-  saveSettings();
-  updateLearnUI();
-  if (practiceAnalogSVG) renderClock(practiceAnalogSVG, state.practiceTarget.h, state.practiceTarget.m);
-});
-
-function saveProgress() {
-  localStorage.setItem('clockApp_stars', state.stars);
-  localStorage.setItem('clockApp_lang', state.lang);
+function saveProg(){localStorage.setItem('ca_stars',S.stars);localStorage.setItem('ca_lang',S.lang);}
+function saveSett(){
+  localStorage.setItem('ca_s24',S.s24);localStorage.setItem('ca_sMin',S.sMin);
+  localStorage.setItem('ca_sub',document.getElementById('sub').value);
+  localStorage.setItem('ca_dif',document.getElementById('dif').value);
+}
+function loadStore(){
+  const st=localStorage.getItem('ca_stars');if(st)S.stars=parseInt(st);
+  const lg=localStorage.getItem('ca_lang');if(lg)S.lang=lg;
+  const s24=localStorage.getItem('ca_s24');if(s24!==null)S.s24=s24==='true';
+  const sm=localStorage.getItem('ca_sMin');if(sm!==null)S.sMin=sm==='true';
+  const sub=localStorage.getItem('ca_sub');if(sub)S.pSub=sub;
+  const dif=localStorage.getItem('ca_dif');const vd=['60','30','15','5','1'];
+  S.pDif=(dif&&vd.includes(dif))?dif:'60';
+  document.getElementById('t24').checked=S.s24;
+  document.getElementById('tmin').checked=S.sMin;
+  document.getElementById('sub').value=S.pSub;
+  document.getElementById('dif').value=S.pDif;
+  document.getElementById('sc').textContent=S.stars;
 }
 
-function saveSettings() {
-  localStorage.setItem('clockApp_show24h', state.show24h);
-  localStorage.setItem('clockApp_showMinNums', state.showMinNums);
-  state.practiceSubmode = document.getElementById('submode-select').value;
-  state.practiceDiff    = document.getElementById('diff-select').value;
-  localStorage.setItem('clockApp_submode', state.practiceSubmode);
-  localStorage.setItem('clockApp_diff', state.practiceDiff);
+function init(){
+  loadStore();applyLang();
+  const svg=document.getElementById('asvg');
+  renderClock(svg,LS.h,LS.m);
+  setupDrag(svg,LS,updLearn);
+  updLearn();
 }
-
-function loadFromStorage() {
-  const stars = localStorage.getItem('clockApp_stars');
-  if (stars !== null) state.stars = parseInt(stars);
-
-  const lang = localStorage.getItem('clockApp_lang');
-  if (lang) state.lang = lang;
-
-  const show24h = localStorage.getItem('clockApp_show24h');
-  if (show24h !== null) state.show24h = show24h === 'true';
-
-  const showMin = localStorage.getItem('clockApp_showMinNums');
-  if (showMin !== null) state.showMinNums = showMin === 'true';
-
-  const submode = localStorage.getItem('clockApp_submode');
-  if (submode) state.practiceSubmode = submode;
-
-  const diff = localStorage.getItem('clockApp_diff');
-  const validDiffs = ['60','30','15','5','1'];
-  if (diff && validDiffs.includes(diff)) state.practiceDiff = diff;
-  else state.practiceDiff = '60';
-
-  document.getElementById('toggle-24h').checked = state.show24h;
-  document.getElementById('toggle-minutes').checked = state.showMinNums;
-  document.getElementById('submode-select').value = state.practiceSubmode;
-  document.getElementById('diff-select').value = state.practiceDiff;
-  document.getElementById('star-count').textContent = state.stars;
-}
-
-function init() {
-  loadFromStorage();
-  applyLanguage();
-  const learnSVG = document.getElementById('analog-svg');
-  setupDrag(learnSVG, updateLearnUI);
-  updateLearnUI();
-}
-
 init();
 </script>
 </body>
